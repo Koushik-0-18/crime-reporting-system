@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>All Cases</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #ffffff; min-height: 100vh; padding: 30px 20px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; color: #212121; }
+    .header p { font-size: 0.95rem; color: #555; margin-top: 4px; }
+    .back-btn {
+      padding: 10px 20px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .back-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .back-btn:hover { color: #e8e8e8; }
+    .back-btn:hover::before { width: 100%; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; margin-bottom: 28px; border-bottom: 2px solid #f0f0f0; }
+    .tab-btn {
+      padding: 12px 28px; border: none; background: none; font-size: 1rem; font-weight: 700;
+      color: #888; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+    }
+    .tab-btn.active { color: #212121; border-bottom-color: #212121; }
+    .tab-btn:hover { color: #212121; }
+
+    /* Loader */
+    .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+    .loader { width: 80px; height: 50px; position: relative; }
+    .loader-text { position: absolute; top: 0; color: #9A79FF; animation: text_713 3.5s ease both infinite; font-size: .8rem; letter-spacing: 1px; }
+    .load { background-color: #9A79FF; border-radius: 50px; display: block; height: 16px; width: 16px; bottom: 0; position: absolute; transform: translateX(64px); animation: loading_713 3.5s ease both infinite; }
+    .load::before { position:absolute; content:""; width:100%; height:100%; background-color:#D1C2FF; border-radius:inherit; animation:loading2_713 3.5s ease both infinite; }
+    @keyframes text_713 { 0%{letter-spacing:1px;transform:translateX(0px)} 40%{letter-spacing:2px;transform:translateX(26px)} 80%{letter-spacing:1px;transform:translateX(32px)} 90%{letter-spacing:2px;transform:translateX(0px)} 100%{letter-spacing:1px;transform:translateX(0px)} }
+    @keyframes loading_713 { 0%{width:16px;transform:translateX(0px)} 40%{width:100%;transform:translateX(0px)} 80%{width:16px;transform:translateX(64px)} 90%{transform:translateX(0px)} 100%{transform:translateX(0px)} }
+    @keyframes loading2_713 { 0%{transform:translateX(0px);width:16px} 40%{transform:translateX(0%);width:80%} 80%{width:100%;transform:translateX(0px)} 90%{width:80%;transform:translateX(15px)} 100%{transform:translateX(0px);width:16px} }
+
+    .cases-grid { display: grid; gap: 20px; max-width: 960px; margin: 0 auto; }
+    .case-card {
+      background: #fff; border: 1.5px solid #e0e0e0; border-radius: 16px;
+      padding: 24px; box-shadow: 2px 4px 16px rgba(0,0,0,0.07);
+      transition: box-shadow 0.2s, transform 0.2s; cursor: pointer;
+    }
+    .case-card:hover { box-shadow: 4px 8px 24px rgba(0,0,0,0.13); transform: translateY(-2px); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .case-id { font-size: 0.8rem; color: #888; font-weight: 600; letter-spacing: 0.5px; }
+
+    .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+    .status-badge.investigation { background: #cfe2ff; color: #084298; }
+    .status-badge.evidence { background: #fff3cd; color: #664d03; }
+    .status-badge.processing { background: #e2d9f3; color: #432874; }
+    .status-badge.closed { background: #d1e7dd; color: #0f5132; }
+
+    .case-summary { font-size: 0.95rem; color: #444; margin-bottom: 14px; line-height: 1.5; }
+    .meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.83rem; color: #666; }
+
+    .section-title { font-size: 1.1rem; font-weight: 800; color: #212121; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .empty-state { text-align: center; padding: 50px 20px; color: #bbb; font-size: 0.95rem; }
+
+    /* Detail Modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; padding: 20px; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:36px 30px; max-width:600px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,0.2); max-height:85vh; overflow-y:auto; }
+    .modal h3 { font-size:1.2rem; font-weight:800; margin-bottom:20px; color:#212121; }
+    .modal-section { margin-bottom: 18px; }
+    .modal-label { font-size: 0.75rem; color: #999; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .modal-value { font-size: 0.97rem; color: #212121; font-weight: 500; }
+    .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:500px){.modal-grid{grid-template-columns:1fr;}}
+    .modal-close { padding: 12px 24px; border: unset; border-radius: 15px; color: #212121; z-index: 1; background: #e8e8e8; position: relative; font-weight: 700; font-size: 15px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27); transition: all 250ms; overflow: hidden; cursor: pointer; margin-top: 16px; }
+    .modal-close::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .modal-close:hover { color: #e8e8e8; }
+    .modal-close:hover::before { width: 100%; }
+    .divider { border: none; border-top: 1.5px solid #f0f0f0; margin: 16px 0; }
+
+    /* Popup */
+    .popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center; }
+    .popup-overlay.show { display:flex; }
+    .popup { background:#fff; border-radius:16px; padding:32px 28px; max-width:380px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .popup .popup-icon { font-size:2.5rem; margin-bottom:12px; }
+    .popup h3 { font-size:1.15rem; font-weight:700; margin-bottom:8px; color:#212121; }
+    .popup p { color:#555; font-size:0.93rem; margin-bottom:20px; }
+    .popup button { padding:12px 24px; border:unset; border-radius:15px; color:#212121; z-index:1; background:#e8e8e8; position:relative; font-weight:700; font-size:15px; box-shadow:4px 8px 19px -3px rgba(0,0,0,0.27); transition:all 250ms; overflow:hidden; cursor:pointer; }
+    .popup button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .popup button:hover { color:#e8e8e8; }
+    .popup button:hover::before { width:100%; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🗂️ All Cases</h1>
+    <p>Monitor active and closed cases</p>
+  </div>
+  <a href="chief-dashboard.html" class="back-btn">← Back</a>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('active')">🔴 Active Cases</button>
+  <button class="tab-btn" onclick="switchTab('closed')">✅ Closed Cases</button>
+</div>
+
+<div id="loaderWrap" class="loader-wrap">
+  <div class="loader"><span class="loader-text">loading</span><span class="load"></span></div>
+</div>
+
+<div id="tabActive" style="display:none;">
+  <div class="cases-grid" id="activeGrid"></div>
+  <div class="empty-state" id="activeEmpty" style="display:none;">No active cases found.</div>
+</div>
+<div id="tabClosed" style="display:none;">
+  <div class="cases-grid" id="closedGrid"></div>
+  <div class="empty-state" id="closedEmpty" style="display:none;">No closed cases found.</div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <h3>📁 Case Details</h3>
+    <div class="modal-grid" id="modalContent"></div>
+    <hr class="divider">
+    <div id="modalSummary"></div>
+    <button class="modal-close" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <div class="popup-icon" id="popupIcon"></div>
+    <h3 id="popupTitle"></h3>
+    <p id="popupMsg"></p>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:8080';
+  let allData = { active: [], closed: [] };
+
+  function showPopup(icon, title, msg) {
+    document.getElementById('popupIcon').textContent = icon;
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupMsg').textContent = msg;
+    document.getElementById('popupOverlay').classList.add('show');
+  }
+  function closePopup() { document.getElementById('popupOverlay').classList.remove('show'); }
+  function closeModal() { document.getElementById('detailModal').classList.remove('show'); }
+
+  function statusBadge(status) {
+    const map = {'Under Investigation':'investigation','Evidence Collection':'evidence','Processing':'processing','Closed':'closed'};
+    const cls = map[status] || 'investigation';
+    return `<span class="status-badge ${cls}">${status}</span>`;
+  }
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='active')||(i===1&&tab==='closed')));
+    document.getElementById('tabActive').style.display = tab === 'active' ? 'block' : 'none';
+    document.getElementById('tabClosed').style.display = tab === 'closed' ? 'block' : 'none';
+  }
+
+  function renderCases(cases, gridId, emptyId) {
+    const grid = document.getElementById(gridId);
+    const empty = document.getElementById(emptyId);
+    if (!cases || cases.length === 0) { empty.style.display = 'block'; grid.innerHTML = ''; return; }
+
+    grid.innerHTML = cases.map(c => `
+      <div class="case-card" onclick="viewDetail(${c[0]})">
+        <div class="card-top">
+          <span class="case-id">CASE #${c[0]}</span>
+          ${statusBadge(c[1])}
+        </div>
+        <p class="case-summary">${c[2] || c[3] || 'No summary provided.'}</p>
+        <div class="meta">
+          <span>👮 ${c[6] || 'Unassigned'} (${c[7] || '—'})</span>
+          <span>👤 ${c[8] || '—'}</span>
+          <span>📍 ${c[4] || '—'}</span>
+          <span>📅 ${c[5] || '—'}</span>
+        </div>
+      </div>
+    `).join('');
+
+    empty.style.display = 'none';
+  }
+
+  async function viewDetail(case_id) {
+    try {
+      const res = await fetch(`${BASE}/api/chief/case-details?case_id=${case_id}`);
+      const d = await res.json();
+      // getCaseDetailsForChief: [0]=case_id, [1]=current_status, [2]=case_summary
+      // [3]=final_result, [4]=created_at, [5]=closed_at, [6]=description
+      // [7]=location, [8]=incident_date, [9]=incident_time
+      // [10]=officer name, [11]=badge_id, [12]=officer phone
+      // [13]=citizen full_name, [14]=citizen mobile_number, [15]=citizen email
+
+      const summaryHtml = [];
+      if (d[2]) summaryHtml.push(`<div class="modal-section"><div class="modal-label">Case Summary</div><div class="modal-value" style="line-height:1.6;">${d[2]}</div></div>`);
+      if (d[3]) summaryHtml.push(`<div class="modal-section"><div class="modal-label">Final Result</div><div class="modal-value" style="line-height:1.6;">${d[3]}</div></div>`);
+
+      document.getElementById('modalContent').innerHTML = `
+        <div class="modal-section"><div class="modal-label">Case ID</div><div class="modal-value">#${d[0]}</div></div>
+        <div class="modal-section"><div class="modal-label">Status</div><div class="modal-value">${statusBadge(d[1])}</div></div>
+        <div class="modal-section"><div class="modal-label">Assigned Officer</div><div class="modal-value">${d[10] || '—'}</div></div>
+        <div class="modal-section"><div class="modal-label">Badge</div><div class="modal-value">${d[11] || '—'}</div></div>
+        <div class="modal-section"><div class="modal-label">Opened</div><div class="modal-value">${d[4] || '—'}</div></div>
+        <div class="modal-section"><div class="modal-label">Closed</div><div class="modal-value">${d[5] || '—'}</div></div>
+        <div class="modal-section"><div class="modal-label">Citizen</div><div class="modal-value">${d[13] || '—'}</div></div>
+        <div class="modal-section"><div class="modal-label">Location</div><div class="modal-value">${d[7] || '—'}</div></div>
+      `;
+
+      document.getElementById('modalSummary').innerHTML = summaryHtml.join('');
+      document.getElementById('detailModal').classList.add('show');
+    } catch(e) { showPopup('❌', 'Error', 'Could not load case details.'); }
+  }
+
+  async function loadAll() {
+    try {
+      const [activeRes, closedRes] = await Promise.all([
+        fetch(`${BASE}/api/chief/active-cases`),
+        fetch(`${BASE}/api/chief/closed-cases`)
+      ]);
+      allData.active = await activeRes.json();
+      allData.closed = await closedRes.json();
+      document.getElementById('loaderWrap').style.display = 'none';
+      document.getElementById('tabActive').style.display = 'block';
+      document.getElementById('tabClosed').style.display = 'none';
+      renderCases(allData.active, 'activeGrid', 'activeEmpty');
+      renderCases(allData.closed, 'closedGrid', 'closedEmpty');
+    } catch(e) {
+      document.getElementById('loaderWrap').style.display = 'none';
+      showPopup('❌', 'Error', 'Could not load cases.');
+    }
+  }
+
+  loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Citizen Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: #ffffff;
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      font-size: 14px;
+      color: #555;
+      text-decoration: none;
+      letter-spacing: 1px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      transition: color 0.2s;
+      width: auto;
+      box-shadow: none;
+      padding: 0;
+      font-weight: 600;
+    }
+    .logout-btn:hover { color: #000; }
+    .logout-btn::before { display: none; }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .welcome h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .welcome p {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+
+    /* Card */
+    .card {
+      width: 420px;
+      height: 254px;
+      border-radius: 4px;
+      background: #212121;
+      display: flex;
+      gap: 5px;
+      padding: .4em;
+    }
+
+    .card p {
+      height: 100%;
+      flex: 1;
+      overflow: hidden;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all .5s;
+      background: #212121;
+      border: 1px solid #ff5a91;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-decoration: none;
+      margin: 0;
+    }
+
+    .card p:hover { flex: 4; }
+
+    .card p span {
+      min-width: 14em;
+      padding: .5em;
+      text-align: center;
+      transform: rotate(-90deg);
+      transition: all .5s;
+      text-transform: uppercase;
+      color: #ff568e;
+      letter-spacing: .1em;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card p:hover span { transform: rotate(0); }
+
+    .card-icon { font-size: 2rem; }
+
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      color: #ccc;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="logout-btn" onclick="logout()">← Logout</button>
+
+  <div class="welcome">
+    <h1>Welcome, <span id="citizen-name">Citizen</span></h1>
+    <p>What would you like to do today?</p>
+  </div>
+
+  <div class="card">
+
+    <p onclick="window.location.href='file-complaint.html'">
+      <span>
+        <span class="card-icon">📋</span>
+        File Complaint
+      </span>
+    </p>
+
+    <p onclick="window.location.href='my-complaints.html'">
+      <span>
+        <span class="card-icon">📁</span>
+        My Complaints
+      </span>
+    </p>
+
+    <p onclick="window.location.href='my-cases.html'">
+      <span>
+        <span class="card-icon">🔍</span>
+        My Cases
+      </span>
+    </p>
+
+  </div>
+
+  <p class="footer">© 2026 Crime Reporting Portal</p>
+
+  <script>
+    // Check if logged in
+    const citizenId = localStorage.getItem('citizen_id');
+    if (!citizenId) {
+      window.location.href = 'citizen-login.html';
+    }
+
+    async function loadName() {
+      try {
+        const response = await fetch(`http://localhost:8080/api/citizen/name?citizen_id=${citizenId}`);
+        const data = await response.json();
+        if (data.name) {
+          document.getElementById('citizen-name').textContent = data.name;
+        }
+      } catch (err) {
+        document.getElementById('citizen-name').textContent = 'Citizen';
+      }
+    }
+
+    loadName();
+
+    function logout() {
+      localStorage.removeItem('citizen_id');
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>

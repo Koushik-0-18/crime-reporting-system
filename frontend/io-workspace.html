@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Case Workspace</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #ffffff; min-height: 100vh; padding: 30px 20px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; color: #212121; }
+    .header p { font-size: 0.95rem; color: #555; margin-top: 4px; }
+    .back-btn {
+      padding: 10px 20px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .back-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .back-btn:hover { color: #e8e8e8; }
+    .back-btn:hover::before { width: 100%; }
+
+    /* Loader */
+    .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+    .loader { width: 80px; height: 50px; position: relative; }
+    .loader-text { position: absolute; top: 0; color: #9A79FF; animation: text_713 3.5s ease both infinite; font-size: .8rem; letter-spacing: 1px; }
+    .load { background-color: #9A79FF; border-radius: 50px; display: block; height: 16px; width: 16px; bottom: 0; position: absolute; transform: translateX(64px); animation: loading_713 3.5s ease both infinite; }
+    .load::before { position:absolute; content:""; width:100%; height:100%; background-color:#D1C2FF; border-radius:inherit; animation:loading2_713 3.5s ease both infinite; }
+    @keyframes text_713 { 0%{letter-spacing:1px;transform:translateX(0px)} 40%{letter-spacing:2px;transform:translateX(26px)} 80%{letter-spacing:1px;transform:translateX(32px)} 90%{letter-spacing:2px;transform:translateX(0px)} 100%{letter-spacing:1px;transform:translateX(0px)} }
+    @keyframes loading_713 { 0%{width:16px;transform:translateX(0px)} 40%{width:100%;transform:translateX(0px)} 80%{width:16px;transform:translateX(64px)} 90%{transform:translateX(0px)} 100%{transform:translateX(0px)} }
+    @keyframes loading2_713 { 0%{transform:translateX(0px);width:16px} 40%{transform:translateX(0%);width:80%} 80%{width:100%;transform:translateX(0px)} 90%{width:80%;transform:translateX(15px)} 100%{transform:translateX(0px);width:16px} }
+
+    .workspace { max-width: 960px; margin: 0 auto; display: none; }
+
+    .case-banner {
+      background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff;
+      border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: gap;
+    }
+    .case-banner h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
+    .case-banner .sub { font-size: 0.85rem; opacity: 0.7; }
+    .status-select-wrap { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .status-select-wrap label { font-size: 0.75rem; opacity: 0.7; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    select.status-sel {
+      padding: 10px 16px; border-radius: 10px; border: none; font-size: 0.9rem; font-weight: 700;
+      background: rgba(255,255,255,0.15); color: #fff; cursor: pointer; outline: none;
+    }
+    select.status-sel option { background: #212121; color: #fff; }
+
+    button.update-status-btn {
+      padding: 10px 22px; border: unset; border-radius: 12px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 13px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; margin-top: 4px;
+    }
+    button.update-status-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:12px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    button.update-status-btn:hover { color: #e8e8e8; }
+    button.update-status-btn:hover::before { width: 100%; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 22px; }
+    @media(max-width:700px){ .grid-2 { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: #fff; border: 1.5px solid #e0e0e0; border-radius: 16px;
+      padding: 24px; box-shadow: 2px 4px 16px rgba(0,0,0,0.07);
+    }
+    .panel-title { font-size: 0.95rem; font-weight: 800; color: #212121; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+    .full-panel { margin-bottom: 22px; }
+
+    .info-item { margin-bottom: 12px; }
+    .info-item label { font-size: 0.72rem; color: #999; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-item p { font-size: 0.93rem; color: #212121; margin-top: 2px; font-weight: 500; }
+
+    .evidence-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .evidence-item { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 0.82rem; background: #fafafa; text-decoration: none; color: #212121; }
+    .evidence-item:hover { background: #f0f0f0; }
+    .no-evidence { font-size: 0.85rem; color: #bbb; font-style: italic; }
+
+    .input { width:100%; padding:0.875rem; font-size:1rem; border:1.5px solid #000; border-radius:0.5rem; box-shadow:2.5px 3px 0 #000; outline:none; transition:ease 0.25s; font-family:inherit; }
+    .input:focus { box-shadow:5.5px 7px 0 black; }
+    textarea.input { resize: vertical; min-height: 90px; }
+
+    .action-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 12px; }
+    .action-row input[type="file"] { flex: 1; min-width: 180px; }
+
+    button.panel-btn {
+      padding: 12px 22px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    button.panel-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    button.panel-btn:hover { color: #e8e8e8; }
+    button.panel-btn:hover::before { width: 100%; }
+    button.panel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Diary */
+    .diary-entry { border-left: 3px solid #9A79FF; padding: 10px 16px; margin-bottom: 12px; background: #fafafa; border-radius: 0 10px 10px 0; }
+    .diary-entry .diary-time { font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
+    .diary-entry .diary-note { font-size: 0.9rem; color: #333; line-height: 1.5; }
+
+    /* Close Case */
+    .close-zone { background: #fff5f5; border: 1.5px solid #f5c2c7; border-radius: 16px; padding: 24px; margin-bottom: 22px; }
+    .close-zone .panel-title { color: #842029; border-bottom-color: #f5c2c7; }
+    .close-zone p { font-size: 0.88rem; color: #842029; margin-bottom: 14px; }
+    button.close-btn {
+      padding: 13px 26px; border: unset; border-radius: 15px; color: #fff;
+      z-index: 1; background: #dc3545; position: relative; font-weight: 700;
+      font-size: 15px; box-shadow: 4px 8px 19px -3px rgba(220,53,69,0.4);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    button.close-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#842029; z-index:-1; transition:all 250ms; }
+    button.close-btn:hover::before { width: 100%; }
+    button.close-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Popup */
+    .popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .popup-overlay.show { display:flex; }
+    .popup { background:#fff; border-radius:16px; padding:32px 28px; max-width:380px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .popup .popup-icon { font-size:2.5rem; margin-bottom:12px; }
+    .popup h3 { font-size:1.15rem; font-weight:700; margin-bottom:8px; color:#212121; }
+    .popup p { color:#555; font-size:0.93rem; margin-bottom:20px; }
+    .popup button { padding:12px 24px; border:unset; border-radius:15px; color:#212121; z-index:1; background:#e8e8e8; position:relative; font-weight:700; font-size:15px; box-shadow:4px 8px 19px -3px rgba(0,0,0,0.27); transition:all 250ms; overflow:hidden; cursor:pointer; }
+    .popup button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .popup button:hover { color:#e8e8e8; }
+    .popup button:hover::before { width:100%; }
+
+    .status-badge { display:inline-block; padding: 3px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+    .status-badge.investigation { background: #cfe2ff; color: #084298; }
+    .status-badge.evidence { background: #fff3cd; color: #664d03; }
+    .status-badge.processing { background: #e2d9f3; color: #432874; }
+    .status-badge.closed { background: #d1e7dd; color: #0f5132; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔧 Case Workspace</h1>
+    <p id="caseLabel">Loading case...</p>
+  </div>
+  <a href="io-cases.html" class="back-btn">← Back</a>
+</div>
+
+<div id="loaderWrap" class="loader-wrap">
+  <div class="loader"><span class="loader-text">loading</span><span class="load"></span></div>
+</div>
+
+<div class="workspace" id="workspace">
+
+  <!-- Banner -->
+  <div class="case-banner">
+    <div>
+      <h2 id="bannerCaseId">Case #—</h2>
+      <div class="sub" id="bannerSub">Loading details...</div>
+    </div>
+    <div class="status-select-wrap">
+      <label>Update Status</label>
+      <select class="status-sel" id="statusSelect">
+        <option value="Under Investigation">Under Investigation</option>
+        <option value="Evidence Collection">Evidence Collection</option>
+        <option value="Processing">Processing</option>
+      </select>
+      <button class="update-status-btn" onclick="updateStatus()">💾 Save Status</button>
+    </div>
+  </div>
+
+  <!-- Citizen + Complaint Info -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-title">👤 Citizen Info</div>
+      <div class="info-item"><label>Name</label><p id="citizenName">—</p></div>
+      <div class="info-item"><label>Phone</label><p id="citizenPhone">—</p></div>
+      <div class="info-item"><label>Email</label><p id="citizenEmail">—</p></div>
+      <div class="info-item"><label>Address</label><p id="citizenAddress">—</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">📋 Complaint Info</div>
+      <div class="info-item"><label>Description</label><p id="compDesc">—</p></div>
+      <div class="info-item"><label>Location</label><p id="compLoc">—</p></div>
+      <div class="info-item"><label>Incident Date</label><p id="compDate">—</p></div>
+      <div class="info-item"><label>Filed On</label><p id="compFiled">—</p></div>
+    </div>
+  </div>
+
+  <!-- Complaint Evidence -->
+  <div class="panel full-panel">
+    <div class="panel-title">📁 Original Complaint Evidence</div>
+    <div class="evidence-list" id="complaintEvidence"></div>
+  </div>
+
+  <!-- Case Evidence + Upload -->
+  <div class="panel full-panel">
+    <div class="panel-title">🗂️ Case Evidence</div>
+    <div class="evidence-list" id="caseEvidence" style="margin-bottom:18px;"></div>
+    <div class="action-row">
+      <input type="file" id="evidenceFile" class="input" style="padding:0.6rem;" />
+      <button class="panel-btn" onclick="uploadEvidence()" id="uploadBtn">📎 Upload</button>
+    </div>
+  </div>
+
+  <!-- Case Diary -->
+  <div class="panel full-panel">
+    <div class="panel-title">📓 Case Diary</div>
+    <div id="diaryEntries" style="margin-bottom:18px;"></div>
+    <textarea class="input" id="diaryNote" placeholder="Write a diary entry / case note..." rows="3"></textarea>
+    <div style="margin-top:12px;">
+      <button class="panel-btn" onclick="addDiary()" id="diaryBtn">✏️ Add Entry</button>
+    </div>
+  </div>
+
+  <!-- Close Case -->
+  <div class="close-zone" id="closeZone">
+    <div class="panel-title">🔒 Close Case</div>
+    <p>Once closed, no further updates can be made. Provide a final result summary before closing.</p>
+    <textarea class="input" id="finalResult" placeholder="Final result / resolution summary..." rows="3" style="margin-bottom:14px;"></textarea>
+    <button class="close-btn" onclick="closeCase()" id="closeCaseBtn">🔒 Close Case</button>
+  </div>
+
+</div>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <div class="popup-icon" id="popupIcon"></div>
+    <h3 id="popupTitle"></h3>
+    <p id="popupMsg"></p>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:8080';
+  let caseId = null;
+  let officerId = null;
+  let popupCb = null;
+
+  function showPopup(icon, title, msg, cb) {
+    document.getElementById('popupIcon').textContent = icon;
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupMsg').textContent = msg;
+    document.getElementById('popupOverlay').classList.add('show');
+    popupCb = cb || null;
+  }
+  function closePopup() {
+    document.getElementById('popupOverlay').classList.remove('show');
+    if (popupCb) { popupCb(); popupCb = null; }
+  }
+
+  function fileIcon(url) {
+    if (!url) return '📄';
+    const ext = url.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+    if (ext === 'pdf') return '📕';
+    if (['mp4','mov','avi'].includes(ext)) return '🎥';
+    return '📄';
+  }
+
+  function renderEvidence(list, containerId) {
+    const el = document.getElementById(containerId);
+    if (!list || list.length === 0) {
+      el.innerHTML = '<span class="no-evidence">No evidence yet.</span>';
+      return;
+    }
+    // complaint evidence: [0]=evidence_id, [1]=file_url, [2]=uploaded_at
+    // case evidence:      [0]=evidence_id, [1]=uploaded_by, [2]=file_url, [3]=uploaded_at
+    const isCase = containerId === 'caseEvidence';
+    el.innerHTML = list.map(e => {
+      const url = isCase ? e[2] : e[1];
+      const name = url ? url.split('/').pop() : 'file';
+      return `<a class="evidence-item" href="${url}" target="_blank">${fileIcon(url)} ${name}</a>`;
+    }).join('');
+  }
+
+  function renderDiary(entries) {
+    const el = document.getElementById('diaryEntries');
+    if (!entries || entries.length === 0) {
+      el.innerHTML = '<span class="no-evidence">No diary entries yet.</span>';
+      return;
+    }
+    // diary: [0]=note, [1]=created_at
+    el.innerHTML = entries.slice().reverse().map(d => `
+      <div class="diary-entry">
+        <div class="diary-time">${d[1] || ''}</div>
+        <div class="diary-note">${d[0]}</div>
+      </div>
+    `).join('');
+  }
+
+  async function loadAll() {
+    caseId = localStorage.getItem('io_case_id');
+    officerId = localStorage.getItem('police_id');
+    if (!caseId || !officerId) { window.location.href = 'io-cases.html'; return; }
+
+    try {
+      const [citizenRes, compEvRes, caseEvRes, diaryRes] = await Promise.all([
+        fetch(`${BASE}/api/io/citizen-info?case_id=${caseId}`),
+        fetch(`${BASE}/api/io/complaint-evidence?case_id=${caseId}`),
+        fetch(`${BASE}/api/io/case-evidence?case_id=${caseId}`),
+        fetch(`${BASE}/api/io/diary?case_id=${caseId}`)
+      ]);
+
+      // citizen: [0]=citizen_id, [1]=full_name, [2]=mobile_number, [3]=email, [4]=address
+      const citizen = await citizenRes.json();
+      const compEv = await compEvRes.json();
+      const caseEv = await caseEvRes.json();
+      const diary = await diaryRes.json();
+
+      document.getElementById('loaderWrap').style.display = 'none';
+      document.getElementById('workspace').style.display = 'block';
+
+      // Banner
+      document.getElementById('bannerCaseId').textContent = `Case #${caseId}`;
+      document.getElementById('caseLabel').textContent = 'Active Case Workspace';
+
+      // Citizen info — array indexes
+      if (Array.isArray(citizen)) {
+        document.getElementById('citizenName').textContent = citizen[1] || '—';
+        document.getElementById('citizenPhone').textContent = citizen[2] || '—';
+        document.getElementById('citizenEmail').textContent = citizen[3] || '—';
+        document.getElementById('citizenAddress').textContent = citizen[4] || '—';
+      }
+
+      // Complaint info — not returned by citizen-info endpoint, show dashes
+      document.getElementById('compDesc').textContent = '—';
+      document.getElementById('compLoc').textContent = '—';
+      document.getElementById('compDate').textContent = '—';
+      document.getElementById('compFiled').textContent = '—';
+
+      renderEvidence(compEv, 'complaintEvidence');
+      renderEvidence(caseEv, 'caseEvidence');
+      renderDiary(diary);
+      } catch(e) {
+      document.getElementById('loaderWrap').style.display = 'none';
+      showPopup('❌', 'Error', 'Could not load case data.');
+    }
+  }
+
+  async function updateStatus() {
+    const status = document.getElementById('statusSelect').value;
+    const body = new URLSearchParams({ case_id: caseId, status, officer_id: officerId });
+    try {
+      const res = await fetch(`${BASE}/api/io/update-status`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+      const data = await res.json();
+      if (data.success) showPopup('✅', 'Updated', 'Case status updated successfully.');
+      else showPopup('❌', 'Failed', data.message || 'Could not update status.');
+    } catch(e) { showPopup('❌', 'Error', 'Request failed.'); }
+  }
+
+  async function uploadEvidence() {
+    const file = document.getElementById('evidenceFile').files[0];
+    if (!file) { showPopup('⚠️', 'No File', 'Please select a file.'); return; }
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true; btn.textContent = 'Uploading...';
+
+    const formData = new FormData();
+    formData.append('case_id', caseId);
+    formData.append('uploaded_by', 'police');
+    formData.append('uploaded_by_id', officerId);
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${BASE}/api/io/upload-evidence`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = '📎 Upload';
+      if (data.success) { showPopup('✅', 'Uploaded', 'Evidence uploaded successfully.'); loadAll(); }
+      else showPopup('❌', 'Failed', data.message || 'Upload failed.');
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '📎 Upload';
+      showPopup('❌', 'Error', 'Upload request failed.');
+    }
+  }
+
+  async function addDiary() {
+    const note = document.getElementById('diaryNote').value.trim();
+    if (!note) { showPopup('⚠️', 'Empty', 'Please write a diary entry.'); return; }
+    const btn = document.getElementById('diaryBtn');
+    btn.disabled = true; btn.textContent = 'Saving...';
+    const body = new URLSearchParams({ case_id: caseId, officer_id: officerId, note });
+    try {
+      const res = await fetch(`${BASE}/api/io/add-diary`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = '✏️ Add Entry';
+      if (data.success) { document.getElementById('diaryNote').value = ''; showPopup('✅', 'Saved', 'Diary entry added.'); loadAll(); }
+      else showPopup('❌', 'Failed', data.message || 'Could not add entry.');
+    } catch(e) { btn.disabled = false; btn.textContent = '✏️ Add Entry'; showPopup('❌', 'Error', 'Request failed.'); }
+  }
+
+  async function closeCase() {
+    const final_result = document.getElementById('finalResult').value.trim();
+    if (!final_result) { showPopup('⚠️', 'Required', 'Please enter a final result before closing.'); return; }
+    const btn = document.getElementById('closeCaseBtn');
+    btn.disabled = true; btn.textContent = 'Closing...';
+    const body = new URLSearchParams({ case_id: caseId, summary: final_result, final_result });
+    try {
+      const res = await fetch(`${BASE}/api/io/close-case`, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = '🔒 Close Case';
+      if (data.success) {
+        showPopup('✅', 'Case Closed', 'The case has been successfully closed.', () => { window.location.href = 'io-cases.html'; });
+      } else showPopup('❌', 'Failed', data.message || 'Could not close case.');
+    } catch(e) { btn.disabled = false; btn.textContent = '🔒 Close Case'; showPopup('❌', 'Error', 'Request failed.'); }
+  }
+
+  loadAll();
+</script>
+</body>
+</html>

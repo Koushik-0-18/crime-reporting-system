@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crime Reporting Portal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('landing_page.jpg') center center / cover no-repeat;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+    }
+
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+    }
+
+    .title {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      color: #00dbde;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .tagline {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 60px;
+      letter-spacing: 1px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 60px;
+      justify-content: center;
+      margin-bottom: 60px;
+    }
+
+    /* Card styles */
+    .card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 320px;
+      border-radius: 24px;
+      line-height: 1.6;
+      transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+      padding: 36px;
+      border-radius: 22px;
+      color: #ffffff;
+      overflow: hidden;
+      background: #213fb7;
+      transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+      width: 100%;
+    }
+
+    .card-inner::before {
+      position: absolute;
+      content: "";
+      top: -4%;
+      left: 50%;
+      width: 90%;
+      height: 90%;
+      transform: translate(-50%);
+      background: #ced8ff;
+      z-index: -1;
+      transform-origin: bottom;
+      border-radius: inherit;
+      transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .card-inner::after {
+      position: absolute;
+      content: "";
+      top: -8%;
+      left: 50%;
+      width: 80%;
+      height: 80%;
+      transform: translate(-50%);
+      background: #e7ecff;
+      z-index: -2;
+      transform-origin: bottom;
+      border-radius: inherit;
+      transition: all 0.48s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .card-icon {
+      font-size: 3rem;
+    }
+
+    .card-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .card-sub {
+      font-size: 15px;
+      color: rgba(255,255,255,0.75);
+      margin-top: -16px;
+    }
+
+    .card-action {
+      font-size: 15px;
+      color: #fea000;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .card:hover {
+      transform: translate(0px, -16px);
+    }
+
+    .card:hover .card-inner::before {
+      rotate: -8deg;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .card:hover .card-inner::after {
+      rotate: 8deg;
+      top: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Button style */
+    button {
+      padding: 15px 25px;
+      border: unset;
+      border-radius: 15px;
+      color: #212121;
+      z-index: 1;
+      background: #e8e8e8;
+      position: relative;
+      font-weight: 1000;
+      font-size: 17px;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    button::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%; width: 0;
+      border-radius: 15px;
+      background-color: #212121;
+      z-index: -1;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms;
+    }
+    button:hover { color: #e8e8e8; }
+    button:hover::before { width: 100%; }
+
+    .footer {
+      position: relative;
+      z-index: 1;
+      color: rgba(255,255,255,0.2);
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-wrapper">
+    <h1 class="title">Crime Reporting<br/>& Tracking</h1>
+    <p class="subtitle">Select User</p>
+    <p class="tagline">A secure platform for citizens and law enforcement</p>
+
+    <div class="cards">
+
+      <a class="card" href="citizen-portal.html">
+        <div class="card-inner">
+          <div class="card-icon">👤</div>
+          <div class="card-title">Citizen</div>
+          <div class="card-sub">File & track your complaints</div>
+          <div class="card-action">Enter Portal →</div>
+        </div>
+      </a>
+
+      <a class="card" href="police-login.html">
+        <div class="card-inner">
+          <div class="card-icon">🚔</div>
+          <div class="card-title">Police</div>
+          <div class="card-sub">Manage cases & investigations</div>
+          <div class="card-action">Enter Portal →</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <p class="footer">© 2026 Crime Reporting Portal. All rights reserved.</p>
+
+</body>
+</html>

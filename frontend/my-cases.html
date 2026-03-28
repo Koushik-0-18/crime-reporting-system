@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Cases</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #ffffff; min-height: 100vh; padding: 30px 20px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; max-width: 900px; margin-left: auto; margin-right: auto; margin-bottom: 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; color: #212121; }
+    .header p { font-size: 0.95rem; color: #555; margin-top: 4px; }
+    .back-btn {
+      padding: 10px 20px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .back-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .back-btn:hover { color: #e8e8e8; }
+    .back-btn:hover::before { width: 100%; }
+
+    /* Loader */
+    .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+    .loader { width: 80px; height: 50px; position: relative; }
+    .loader-text { position: absolute; top: 0; color: #9A79FF; animation: text_713 3.5s ease both infinite; font-size: .8rem; letter-spacing: 1px; }
+    .load { background-color: #9A79FF; border-radius: 50px; display: block; height: 16px; width: 16px; bottom: 0; position: absolute; transform: translateX(64px); animation: loading_713 3.5s ease both infinite; }
+    .load::before { position: absolute; content: ""; width: 100%; height: 100%; background-color: #D1C2FF; border-radius: inherit; animation: loading2_713 3.5s ease both infinite; }
+    @keyframes text_713 { 0%{letter-spacing:1px;transform:translateX(0px)} 40%{letter-spacing:2px;transform:translateX(26px)} 80%{letter-spacing:1px;transform:translateX(32px)} 90%{letter-spacing:2px;transform:translateX(0px)} 100%{letter-spacing:1px;transform:translateX(0px)} }
+    @keyframes loading_713 { 0%{width:16px;transform:translateX(0px)} 40%{width:100%;transform:translateX(0px)} 80%{width:16px;transform:translateX(64px)} 90%{transform:translateX(0px)} 100%{transform:translateX(0px)} }
+    @keyframes loading2_713 { 0%{transform:translateX(0px);width:16px} 40%{transform:translateX(0%);width:80%} 80%{width:100%;transform:translateX(0px)} 90%{width:80%;transform:translateX(15px)} 100%{transform:translateX(0px);width:16px} }
+
+    .cases-grid { display: grid; gap: 20px; max-width: 900px; margin: 0 auto; }
+
+    .case-card {
+      background: #fff;
+      border: 1.5px solid #e0e0e0;
+      border-left: 4px solid #212121;
+      border-radius: 16px;
+      padding: 26px 28px;
+      box-shadow: 2px 4px 16px rgba(0,0,0,0.07);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .case-card:hover { box-shadow: 4px 8px 24px rgba(0,0,0,0.13); transform: translateY(-2px); }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .case-id { font-size: 0.8rem; color: #888; font-weight: 600; letter-spacing: 0.5px; }
+
+    .status-badge { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+    .status-badge.investigation { background: #cfe2ff; color: #084298; }
+    .status-badge.evidence      { background: #fff3cd; color: #664d03; }
+    .status-badge.processing    { background: #e2d9f3; color: #432874; }
+    .status-badge.closed        { background: #d1e7dd; color: #0f5132; }
+
+    .case-summary { font-size: 0.97rem; color: #333; line-height: 1.55; margin-bottom: 16px; }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.83rem; color: #666; margin-bottom: 20px; }
+    .meta span { display: flex; align-items: center; gap: 5px; }
+
+    .view-btn {
+      padding: 12px 22px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    .view-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .view-btn:hover { color: #e8e8e8; }
+    .view-btn:hover::before { width: 100%; }
+
+    .empty-state { text-align: center; padding: 80px 20px; color: #aaa; }
+    .empty-state .big-icon { font-size: 4rem; margin-bottom: 16px; }
+    .empty-state p { font-size: 1.05rem; margin-bottom: 20px; }
+    .empty-state a {
+      display: inline-block; padding: 12px 24px; border: unset; border-radius: 15px;
+      color: #212121; background: #e8e8e8; font-weight: 700; font-size: 14px;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27); transition: all 250ms;
+      overflow: hidden; cursor: pointer; text-decoration: none; position: relative;
+    }
+    .empty-state a::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .empty-state a:hover { color: #e8e8e8; }
+    .empty-state a:hover::before { width: 100%; }
+
+    /* Popup */
+    .popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .popup-overlay.show { display:flex; }
+    .popup { background:#fff; border-radius:16px; padding:32px 28px; max-width:360px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .popup-icon { font-size:2.5rem; margin-bottom:12px; }
+    .popup h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; color:#212121; }
+    .popup p { color:#555; font-size:0.9rem; margin-bottom:20px; }
+    .popup button { padding:12px 24px; border:unset; border-radius:15px; color:#212121; z-index:1; background:#e8e8e8; position:relative; font-weight:700; font-size:15px; box-shadow:4px 8px 19px -3px rgba(0,0,0,0.27); transition:all 250ms; overflow:hidden; cursor:pointer; }
+    .popup button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .popup button:hover { color:#e8e8e8; }
+    .popup button:hover::before { width:100%; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1>⚖️ My Cases</h1>
+      <p>Cases opened from your complaints</p>
+    </div>
+    <a href="citizen-dashboard.html" class="back-btn">← Back</a>
+  </div>
+
+  <div id="loaderWrap" class="loader-wrap">
+    <div class="loader">
+      <span class="loader-text">loading</span>
+      <span class="load"></span>
+    </div>
+  </div>
+
+  <div class="cases-grid" id="casesGrid" style="display:none;"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="big-icon">⚖️</div>
+    <p>No cases yet. Cases are created when a complaint is converted by the Chief.</p>
+    <a href="my-complaints.html">View My Complaints</a>
+  </div>
+
+  <!-- Popup -->
+  <div class="popup-overlay" id="popupOverlay">
+    <div class="popup">
+      <div class="popup-icon" id="popupIcon"></div>
+      <h3 id="popupTitle"></h3>
+      <p id="popupMsg"></p>
+      <button onclick="document.getElementById('popupOverlay').classList.remove('show')">OK</button>
+    </div>
+  </div>
+
+  <script>
+    const BASE = 'http://localhost:8080';
+
+    function showPopup(icon, title, msg) {
+      document.getElementById('popupIcon').textContent = icon;
+      document.getElementById('popupTitle').textContent = title;
+      document.getElementById('popupMsg').textContent = msg;
+      document.getElementById('popupOverlay').classList.add('show');
+    }
+
+    function statusBadge(status) {
+      const map = {
+        'Under Investigation': 'investigation',
+        'Evidence Collection': 'evidence',
+        'Processing': 'processing',
+        'Closed': 'closed'
+      };
+      const cls = map[status] || 'investigation';
+      return `<span class="status-badge ${cls}">${status}</span>`;
+    }
+
+    function viewCase(complaint_id) {
+      localStorage.setItem('view_complaint_id', complaint_id);
+      window.location.href = 'case-details.html';
+    }
+
+    async function loadCases() {
+      const citizen_id = localStorage.getItem('citizen_id');
+      if (!citizen_id) { window.location.href = 'citizen-login.html'; return; }
+
+      try {
+        const res = await fetch(`${BASE}/api/citizen/complaints?citizen_id=${citizen_id}`);
+        const complaints = await res.json();
+
+        document.getElementById('loaderWrap').style.display = 'none';
+
+        // Backend returns camelCase: status, complaintId, incidentDate etc.
+        const converted = (complaints || []).filter(c => c.status === 'Converted');
+
+        if (converted.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+
+        // For each converted complaint, fetch case details using complaintId
+        const casePromises = converted.map(c =>
+          fetch(`${BASE}/api/citizen/case-details?complaint_id=${c.complaintId}`)
+            .then(r => r.json())
+            .then(data => ({ ...data, complaint: c }))
+            .catch(() => null)
+        );
+
+        const cases = (await Promise.all(casePromises)).filter(Boolean);
+
+        if (cases.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+
+        // Log what case-details returns so we can verify field names
+        if (cases.length > 0) console.log('Case detail fields:', cases[0]);
+
+        const grid = document.getElementById('casesGrid');
+        grid.style.display = 'grid';
+        // case-details returns array: [0]=case_id [1]=status [2]=summary [3]=final_result [4]=officer_name [5]=officer_phone [6]=badge_id
+        grid.innerHTML = cases.map(c => {
+          const row     = c[0] ?? c;           // handle if response is array-of-arrays
+          const caseId  = Array.isArray(row) ? row[0] : (c.caseId ?? c.case_id ?? '?');
+          const status  = Array.isArray(row) ? row[1] : (c.currentStatus ?? c.current_status ?? 'Under Investigation');
+          const summary = Array.isArray(row) ? row[2] : (c.caseSummary ?? c.case_summary ?? 'No summary yet.');
+          const officer = Array.isArray(row) ? row[4] : (c.officerName ?? c.officer_name ?? 'Officer not assigned');
+
+          return `
+            <div class="case-card">
+              <div class="card-top">
+                <span class="case-id">CASE #${caseId} &nbsp;·&nbsp; Complaint #${c.complaint.complaintId}</span>
+                ${statusBadge(status)}
+              </div>
+              <p class="case-summary">${summary}</p>
+              <div class="meta">
+                <span>👮 ${officer}</span>
+                <span>📍 ${c.complaint.location}</span>
+                <span>📅 ${c.complaint.incidentDate}</span>
+              </div>
+              <button class="view-btn" onclick="viewCase(${c.complaint.complaintId})">🔍 View Full Details</button>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        document.getElementById('loaderWrap').style.display = 'none';
+        showPopup('❌', 'Error', 'Could not load your cases. Please try again.');
+      }
+    }
+
+    loadCases();
+  </script>
+
+</body>
+</html>

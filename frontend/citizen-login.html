@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Citizen Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: #ffffff;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 30px;
+      left: 30px;
+      font-size: 14px;
+      color: #555;
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+    .back-btn:hover { color: #000; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 380px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .card-icon { font-size: 2.5rem; }
+
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: #999;
+      letter-spacing: 1px;
+      margin-top: -16px;
+    }
+
+    .form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .input {
+      width: 100%;
+      padding: 0.875rem;
+      font-size: 1rem;
+      border: 1.5px solid #000;
+      border-radius: 0.5rem;
+      box-shadow: 2.5px 3px 0 #000;
+      outline: none;
+      transition: ease 0.25s;
+      font-family: inherit;
+    }
+
+    .input:focus { box-shadow: 5.5px 7px 0 black; }
+
+    button {
+      width: 100%;
+      padding: 15px 25px;
+      border: unset;
+      border-radius: 15px;
+      color: #212121;
+      z-index: 1;
+      background: #e8e8e8;
+      position: relative;
+      font-weight: 1000;
+      font-size: 17px;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms;
+      overflow: hidden;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%; width: 0;
+      border-radius: 15px;
+      background-color: #212121;
+      z-index: -1;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms;
+    }
+
+    button:hover { color: #e8e8e8; }
+    button:hover::before { width: 100%; }
+
+    .loader-wrapper {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .loader { width: 80px; height: 50px; position: relative; }
+
+    .loader-text {
+      position: absolute;
+      top: 0;
+      color: #9A79FF;
+      animation: text_713 3.5s ease both infinite;
+      font-size: .8rem;
+      letter-spacing: 1px;
+    }
+
+    .load {
+      background-color: #9A79FF;
+      border-radius: 50px;
+      display: block;
+      height: 16px;
+      width: 16px;
+      bottom: 0;
+      position: absolute;
+      transform: translateX(64px);
+      animation: loading_713 3.5s ease both infinite;
+    }
+
+    .load::before {
+      position: absolute;
+      content: "";
+      width: 100%;
+      height: 100%;
+      background-color: #D1C2FF;
+      border-radius: inherit;
+      animation: loading2_713 3.5s ease both infinite;
+    }
+
+    @keyframes text_713 {
+      0% { letter-spacing: 1px; transform: translateX(0px); }
+      40% { letter-spacing: 2px; transform: translateX(26px); }
+      80% { letter-spacing: 1px; transform: translateX(32px); }
+      90% { letter-spacing: 2px; transform: translateX(0px); }
+      100% { letter-spacing: 1px; transform: translateX(0px); }
+    }
+
+    @keyframes loading_713 {
+      0% { width: 16px; transform: translateX(0px); }
+      40% { width: 100%; transform: translateX(0px); }
+      80% { width: 16px; transform: translateX(64px); }
+      90% { width: 100%; transform: translateX(0px); }
+      100% { width: 16px; transform: translateX(0px); }
+    }
+
+    @keyframes loading2_713 {
+      0% { transform: translateX(0px); width: 16px; }
+      40% { transform: translateX(0%); width: 80%; }
+      80% { width: 100%; transform: translateX(0px); }
+      90% { width: 80%; transform: translateX(15px); }
+      100% { transform: translateX(0px); width: 16px; }
+    }
+
+    .error-msg {
+      color: red;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+
+    .register-link {
+      font-size: 13px;
+      color: #555;
+      text-align: center;
+    }
+
+    .register-link a {
+      color: #0a3cff;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .register-link a:hover { text-decoration: underline; }
+
+    .popup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .popup {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .popup-icon { font-size: 3rem; margin-bottom: 16px; }
+    .popup-title { font-size: 1.2rem; font-weight: 900; color: #111; margin-bottom: 8px; }
+    .popup-msg { font-size: 14px; color: #666; margin-bottom: 24px; }
+
+    .popup-btn {
+      padding: 12px 32px;
+      border: unset;
+      border-radius: 15px;
+      color: #212121;
+      background: #e8e8e8;
+      font-weight: 800;
+      font-size: 15px;
+      box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      width: auto;
+    }
+
+    .popup-btn::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0;
+      height: 100%; width: 0;
+      border-radius: 15px;
+      background-color: #212121;
+      z-index: -1;
+      transition: all 250ms;
+    }
+
+    .popup-btn:hover { color: #e8e8e8; }
+    .popup-btn:hover::before { width: 100%; }
+
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      color: #ccc;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <a class="back-btn" href="citizen-portal.html">← Back</a>
+
+  <div class="card">
+    <div class="card-icon">👤</div>
+    <div class="card-title">Citizen Login</div>
+    <p class="card-subtitle">Welcome back</p>
+
+    <div class="form">
+      <div class="field">
+        <label>Mobile Number</label>
+        <input class="input" type="text" id="mobile" placeholder="Enter your mobile number" />
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input class="input" type="password" id="password" placeholder="Enter your password" />
+      </div>
+
+      <p class="error-msg" id="error-msg">Invalid credentials. Please try again.</p>
+
+      <button onclick="handleLogin()">Login</button>
+
+      <div class="loader-wrapper" id="loader-wrapper">
+        <div class="loader">
+          <p class="loader-text">loading</p>
+          <span class="load"></span>
+        </div>
+      </div>
+
+      <p class="register-link">Don't have an account? <a href="citizen-register.html">Register here</a></p>
+    </div>
+  </div>
+
+  <div class="popup-overlay" id="popup-overlay">
+    <div class="popup">
+      <div class="popup-icon">❌</div>
+      <div class="popup-title">Login Failed</div>
+      <p class="popup-msg" id="popup-msg">Invalid mobile number or password.</p>
+      <button class="popup-btn" onclick="closePopup()">Try Again</button>
+    </div>
+  </div>
+
+  <p class="footer">© 2026 Crime Reporting Portal</p>
+
+  <script>
+    async function handleLogin() {
+      const mobile = document.getElementById('mobile').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const errorMsg = document.getElementById('error-msg');
+      const loaderWrapper = document.getElementById('loader-wrapper');
+
+      if (!mobile || !password) {
+        errorMsg.textContent = 'Please fill in all fields.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      errorMsg.style.display = 'none';
+      loaderWrapper.style.display = 'flex';
+
+      try {
+        const params = new URLSearchParams();
+        params.append('mobile_number', mobile);
+        params.append('password', password);
+
+        const response = await fetch('http://localhost:8080/api/citizen/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: params.toString()
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem('citizen_id', data.citizen_id);
+          window.location.href = 'citizen-dashboard.html';
+        } else {
+          showPopup('Invalid mobile number or password.');
+        }
+      } catch (err) {
+        showPopup('Server error. Make sure backend is running.');
+      } finally {
+        loaderWrapper.style.display = 'none';
+      }
+    }
+
+    function showPopup(msg) {
+      document.getElementById('popup-msg').textContent = msg;
+      document.getElementById('popup-overlay').style.display = 'flex';
+    }
+
+    function closePopup() {
+      document.getElementById('popup-overlay').style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>

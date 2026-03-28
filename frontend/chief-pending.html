@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pending Complaints</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #ffffff; min-height: 100vh; padding: 30px 20px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; color: #212121; }
+    .header p { font-size: 0.95rem; color: #555; margin-top: 4px; }
+    .back-btn {
+      padding: 10px 20px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .back-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .back-btn:hover { color: #e8e8e8; }
+    .back-btn:hover::before { width: 100%; }
+
+    .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+    .loader { width: 80px; height: 50px; position: relative; }
+    .loader-text { position: absolute; top: 0; color: #9A79FF; animation: text_713 3.5s ease both infinite; font-size: .8rem; letter-spacing: 1px; }
+    .load { background-color: #9A79FF; border-radius: 50px; display: block; height: 16px; width: 16px; bottom: 0; position: absolute; transform: translateX(64px); animation: loading_713 3.5s ease both infinite; }
+    .load::before { position:absolute; content:""; width:100%; height:100%; background-color:#D1C2FF; border-radius:inherit; animation:loading2_713 3.5s ease both infinite; }
+    @keyframes text_713 { 0%{letter-spacing:1px;transform:translateX(0px)} 40%{letter-spacing:2px;transform:translateX(26px)} 80%{letter-spacing:1px;transform:translateX(32px)} 90%{letter-spacing:2px;transform:translateX(0px)} 100%{letter-spacing:1px;transform:translateX(0px)} }
+    @keyframes loading_713 { 0%{width:16px;transform:translateX(0px)} 40%{width:100%;transform:translateX(0px)} 80%{width:16px;transform:translateX(64px)} 90%{transform:translateX(0px)} 100%{transform:translateX(0px)} }
+    @keyframes loading2_713 { 0%{transform:translateX(0px);width:16px} 40%{transform:translateX(0%);width:80%} 80%{width:100%;transform:translateX(0px)} 90%{width:80%;transform:translateX(15px)} 100%{transform:translateX(0px);width:16px} }
+
+    .complaints-grid { display: grid; gap: 20px; max-width: 960px; margin: 0 auto; }
+    .complaint-card {
+      background: #fff; border: 1.5px solid #e0e0e0; border-radius: 16px;
+      padding: 24px; box-shadow: 2px 4px 16px rgba(0,0,0,0.07);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .complaint-card:hover { box-shadow: 4px 8px 24px rgba(0,0,0,0.13); transform: translateY(-2px); }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .complaint-id { font-size: 0.8rem; color: #888; font-weight: 600; letter-spacing: 0.5px; }
+    .pending-badge { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; background: #fff3cd; color: #856404; }
+
+    .description { font-size: 0.97rem; color: #333; margin-bottom: 14px; line-height: 1.5; }
+    .meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.83rem; color: #666; margin-bottom: 20px; }
+    .meta span { display: flex; align-items: center; gap: 5px; }
+
+    .citizen-info { background: #f9f9f9; border-radius: 10px; padding: 12px 16px; margin-bottom: 18px; font-size: 0.88rem; color: #444; }
+    .citizen-info strong { color: #212121; }
+
+    .actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-reject {
+      padding: 12px 22px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #f8d7da; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.15);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    .btn-reject::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#842029; z-index:-1; transition:all 250ms; }
+    .btn-reject:hover { color: #fff; }
+    .btn-reject:hover::before { width: 100%; }
+
+    .btn-convert {
+      padding: 12px 22px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #d1e7dd; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.15);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    .btn-convert::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#0f5132; z-index:-1; transition:all 250ms; }
+    .btn-convert:hover { color: #fff; }
+    .btn-convert:hover::before { width: 100%; }
+
+    .empty-state { text-align: center; padding: 80px 20px; color: #aaa; }
+    .empty-state .big-icon { font-size: 4rem; margin-bottom: 16px; }
+    .empty-state p { font-size: 1.1rem; }
+
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:#fff; border-radius:20px; padding:36px 30px; max-width:440px; width:92%; box-shadow:0 12px 40px rgba(0,0,0,0.2); }
+    .modal h3 { font-size:1.2rem; font-weight:800; margin-bottom:18px; color:#212121; }
+    .modal label { font-size:0.82rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:6px; }
+    .input { width:100%; padding:0.875rem; font-size:1rem; border:1.5px solid #000; border-radius:0.5rem; box-shadow:2.5px 3px 0 #000; outline:none; transition:ease 0.25s; font-family:inherit; margin-bottom:16px; }
+    .input:focus { box-shadow:5.5px 7px 0 black; }
+    select.input { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 14px center; background-size:18px; }
+    .modal-actions { display:flex; gap:14px; justify-content:flex-end; margin-top:8px; }
+    .modal-actions button { padding: 12px 22px; border: unset; border-radius: 15px; color: #212121; z-index: 1; background: #e8e8e8; position: relative; font-weight: 700; font-size: 15px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27); transition: all 250ms; overflow: hidden; cursor: pointer; }
+    .modal-actions button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .modal-actions button:hover { color: #e8e8e8; }
+    .modal-actions button:hover::before { width: 100%; }
+    .modal-actions button:disabled { opacity:0.4; cursor:not-allowed; }
+
+    .popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; align-items:center; justify-content:center; }
+    .popup-overlay.show { display:flex; }
+    .popup { background:#fff; border-radius:16px; padding:32px 28px; max-width:380px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .popup .popup-icon { font-size:2.5rem; margin-bottom:12px; }
+    .popup h3 { font-size:1.15rem; font-weight:700; margin-bottom:8px; color:#212121; }
+    .popup p { color:#555; font-size:0.93rem; margin-bottom:20px; }
+    .popup button { padding:12px 24px; border:unset; border-radius:15px; color:#212121; z-index:1; background:#e8e8e8; position:relative; font-weight:700; font-size:15px; box-shadow:4px 8px 19px -3px rgba(0,0,0,0.27); transition:all 250ms; overflow:hidden; cursor:pointer; }
+    .popup button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .popup button:hover { color:#e8e8e8; }
+    .popup button:hover::before { width:100%; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>📬 Pending Complaints</h1>
+    <p>Review and take action on citizen complaints</p>
+  </div>
+  <a href="chief-dashboard.html" class="back-btn">← Back</a>
+</div>
+
+<div id="loaderWrap" class="loader-wrap">
+  <div class="loader"><span class="loader-text">loading</span><span class="load"></span></div>
+</div>
+
+<div class="complaints-grid" id="complaintsGrid" style="display:none;"></div>
+<div class="empty-state" id="emptyState" style="display:none;">
+  <div class="big-icon">✅</div>
+  <p>No pending complaints. All clear!</p>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <h3>❌ Reject Complaint</h3>
+    <label>Reason for Rejection</label>
+    <textarea class="input" id="rejectReason" rows="4" placeholder="Enter rejection reason..."></textarea>
+    <div class="modal-actions">
+      <button onclick="closeModals()">Cancel</button>
+      <button onclick="confirmReject()" id="rejectConfirmBtn">Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- Convert Modal -->
+<div class="modal-overlay" id="convertModal">
+  <div class="modal">
+    <h3>✅ Convert to Case</h3>
+    <label>Assign Investigating Officer</label>
+    <select class="input" id="officerSelect"><option value="">Loading officers...</option></select>
+    <label>Initial Case Summary</label>
+    <textarea class="input" id="caseSummary" rows="3" placeholder="Brief summary..."></textarea>
+    <div class="modal-actions">
+      <button onclick="closeModals()">Cancel</button>
+      <button onclick="confirmConvert()" id="convertConfirmBtn">Convert</button>
+    </div>
+  </div>
+</div>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <div class="popup-icon" id="popupIcon"></div>
+    <h3 id="popupTitle"></h3>
+    <p id="popupMsg"></p>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:8080';
+  let selectedComplaintId = null;
+  let officers = [];
+
+  function showPopup(icon, title, msg, cb) {
+    document.getElementById('popupIcon').textContent = icon;
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupMsg').textContent = msg;
+    document.getElementById('popupOverlay').classList.add('show');
+    window._popupCb = cb;
+  }
+  function closePopup() {
+    document.getElementById('popupOverlay').classList.remove('show');
+    if (window._popupCb) { window._popupCb(); window._popupCb = null; }
+  }
+  function closeModals() {
+    document.getElementById('rejectModal').classList.remove('show');
+    document.getElementById('convertModal').classList.remove('show');
+    selectedComplaintId = null;
+  }
+
+  async function loadPending() {
+    try {
+      const res = await fetch(`${BASE}/api/chief/pending-complaints`);
+      const data = await res.json();
+      document.getElementById('loaderWrap').style.display = 'none';
+
+      if (!data || data.length === 0) {
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+      }
+
+      const grid = document.getElementById('complaintsGrid');
+      grid.style.display = 'grid';
+      grid.innerHTML = data.map(c => `
+        <div class="complaint-card">
+          <div class="card-top">
+            <span class="complaint-id">COMPLAINT #${c.complaintId}</span>
+            <span class="pending-badge">⏳ Pending</span>
+          </div>
+          <div class="citizen-info">
+            <strong>Citizen ID:</strong> ${c.citizenId} &nbsp;|&nbsp;
+            <strong>Status:</strong> ${c.status}
+          </div>
+          <p class="description">${c.description}</p>
+          <div class="meta">
+            <span>📅 ${c.incidentDate}</span>
+            <span>🕐 ${c.incidentTime || 'N/A'}</span>
+            <span>📍 ${c.location}</span>
+          </div>
+          <div class="actions">
+            <button class="btn-reject" onclick="openReject(${c.complaintId})">❌ Reject</button>
+            <button class="btn-convert" onclick="openConvert(${c.complaintId})">✅ Convert to Case</button>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) {
+      document.getElementById('loaderWrap').style.display = 'none';
+      showPopup('❌', 'Error', 'Could not load complaints.');
+    }
+  }
+
+  async function loadOfficers() {
+    try {
+      const res = await fetch(`${BASE}/api/chief/officers`);
+      officers = await res.json();
+      const sel = document.getElementById('officerSelect');
+      sel.innerHTML = officers.length
+        ? officers.map(o => `<option value="${o[0]}">${o[1]} (${o[2]})</option>`).join('')
+        : '<option value="">No officers available</option>';
+    } catch(e) {
+      document.getElementById('officerSelect').innerHTML = '<option>Error loading officers</option>';
+    }
+  }
+
+  function openReject(id) {
+    selectedComplaintId = id;
+    document.getElementById('rejectReason').value = '';
+    document.getElementById('rejectModal').classList.add('show');
+  }
+
+  function openConvert(id) {
+    selectedComplaintId = id;
+    document.getElementById('caseSummary').value = '';
+    document.getElementById('convertModal').classList.add('show');
+  }
+
+  async function confirmReject() {
+    const reason = document.getElementById('rejectReason').value.trim();
+    if (!reason) { showPopup('⚠️', 'Required', 'Please enter a rejection reason.'); return; }
+    const btn = document.getElementById('rejectConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Rejecting...';
+    const body = new URLSearchParams({ complaint_id: selectedComplaintId });
+    try {
+      const res = await fetch(`${BASE}/api/chief/reject-complaint`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body
+      });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = 'Reject';
+      closeModals();
+      if (data.success) showPopup('✅', 'Rejected', 'Complaint has been rejected.', loadPending);
+      else showPopup('❌', 'Failed', data.message || 'Could not reject complaint.');
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Reject';
+      showPopup('❌', 'Error', 'Request failed.');
+    }
+  }
+
+  async function confirmConvert() {
+    const officer_id = document.getElementById('officerSelect').value;
+    if (!officer_id) { showPopup('⚠️', 'Required', 'Please select an officer.'); return; }
+    const btn = document.getElementById('convertConfirmBtn');
+    btn.disabled = true; btn.textContent = 'Converting...';
+    const body = new URLSearchParams({ complaint_id: selectedComplaintId, officer_id });
+    try {
+      const res = await fetch(`${BASE}/api/chief/convert-to-case`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body
+      });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = 'Convert';
+      closeModals();
+      if (data.success) showPopup('✅', 'Converted', 'Case created and officer assigned!', loadPending);
+      else showPopup('❌', 'Failed', data.message || 'Conversion failed.');
+    } catch(e) {
+      btn.disabled = false; btn.textContent = 'Convert';
+      showPopup('❌', 'Error', 'Request failed.');
+    }
+  }
+
+  loadPending();
+  loadOfficers();
+</script>
+</body>
+</html>

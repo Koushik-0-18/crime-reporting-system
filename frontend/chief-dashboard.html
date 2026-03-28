@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chief Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: #ffffff;
+    }
+
+    .logout-btn {
+      position: absolute;
+      top: 30px;
+      right: 30px;
+      font-size: 14px;
+      color: #555;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-family: inherit;
+      transition: color 0.2s;
+      width: auto;
+      box-shadow: none;
+      padding: 0;
+      font-weight: 600;
+    }
+    .logout-btn:hover { color: #000; }
+    .logout-btn::before { display: none; }
+
+    .welcome {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .welcome h1 {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #111;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .welcome p {
+      font-size: 0.85rem;
+      color: #999;
+      margin-top: 8px;
+      letter-spacing: 1px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #f0f0f0;
+      color: #555;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+
+    .cards {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .cards .card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      height: 100px;
+      width: 320px;
+      border-radius: 10px;
+      color: white;
+      cursor: pointer;
+      transition: 400ms;
+      border: none;
+      font-family: inherit;
+    }
+
+    .cards .card p.tip {
+      font-size: 1em;
+      font-weight: 700;
+    }
+
+    .cards .card p.second-text {
+      font-size: .7em;
+      opacity: 0.85;
+      margin-top: 4px;
+    }
+
+    .cards .card:hover {
+      transform: scale(1.1, 1.1);
+    }
+
+    .cards:hover > .card:not(:hover) {
+      filter: blur(10px);
+      transform: scale(0.9, 0.9);
+    }
+
+    .red { background-color: #f43f5e; }
+    .blue { background-color: #3b82f6; }
+    .green { background-color: #22c55e; }
+
+    .footer {
+      position: absolute;
+      bottom: 20px;
+      color: #ccc;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="logout-btn" onclick="logout()">← Logout</button>
+
+  <div class="welcome">
+    <h1>Chief Dashboard</h1>
+    <p>Welcome back, <strong id="chief-name">Chief</strong></p>
+    <span class="badge">👑 Chief of Police</span>
+  </div>
+
+  <div class="cards">
+
+    <button class="card red" onclick="window.location.href='chief-pending.html'">
+      <p class="tip">📥 Pending Complaints</p>
+      <p class="second-text">Review and take action on new complaints</p>
+    </button>
+
+    <button class="card blue" onclick="window.location.href='chief-cases.html'">
+      <p class="tip">📁 All Cases</p>
+      <p class="second-text">View active and closed cases</p>
+    </button>
+
+    <button class="card green" onclick="window.location.href='chief-rejected.html'">
+      <p class="tip">❌ Rejected Complaints</p>
+      <p class="second-text">View all rejected complaints</p>
+    </button>
+
+  </div>
+
+  <p class="footer">© 2026 Crime Reporting Portal</p>
+
+  <script>
+    const policeId = localStorage.getItem('police_id');
+    const policeName = localStorage.getItem('police_name');
+    const policeRole = localStorage.getItem('police_role');
+
+    if (!policeId || policeRole !== 'Chief') {
+      window.location.href = 'police-login.html';
+    }
+
+    document.getElementById('chief-name').textContent = policeName || 'Chief';
+    function logout() {
+      localStorage.removeItem('police_id');
+      localStorage.removeItem('police_name');
+      localStorage.removeItem('police_role');
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>

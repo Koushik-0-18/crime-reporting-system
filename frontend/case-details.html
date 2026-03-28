@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Case Details</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #ffffff; min-height: 100vh; padding: 30px 20px; }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+    .header h1 { font-size: 1.8rem; font-weight: 800; color: #212121; }
+    .header p { font-size: 0.95rem; color: #555; margin-top: 4px; }
+    .back-btn {
+      padding: 10px 20px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 700;
+      font-size: 14px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer; text-decoration: none; display: inline-block;
+    }
+    .back-btn::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; transition:all 250ms; }
+    .back-btn:hover { color: #e8e8e8; }
+    .back-btn:hover::before { width: 100%; }
+
+    /* Loader */
+    .loader-wrap { display: flex; justify-content: center; padding: 60px 0; }
+    .loader { width: 80px; height: 50px; position: relative; }
+    .loader-text { position: absolute; top: 0; color: #9A79FF; animation: text_713 3.5s ease both infinite; font-size: .8rem; letter-spacing: 1px; }
+    .load { background-color: #9A79FF; border-radius: 50px; display: block; height: 16px; width: 16px; bottom: 0; position: absolute; transform: translateX(64px); animation: loading_713 3.5s ease both infinite; }
+    .load::before { position:absolute; content:""; width:100%; height:100%; background-color:#D1C2FF; border-radius:inherit; animation:loading2_713 3.5s ease both infinite; }
+    @keyframes text_713 { 0%{letter-spacing:1px;transform:translateX(0px)} 40%{letter-spacing:2px;transform:translateX(26px)} 80%{letter-spacing:1px;transform:translateX(32px)} 90%{letter-spacing:2px;transform:translateX(0px)} 100%{letter-spacing:1px;transform:translateX(0px)} }
+    @keyframes loading_713 { 0%{width:16px;transform:translateX(0px)} 40%{width:100%;transform:translateX(0px)} 80%{width:16px;transform:translateX(64px)} 90%{transform:translateX(0px)} 100%{transform:translateX(0px)} }
+    @keyframes loading2_713 { 0%{transform:translateX(0px);width:16px} 40%{transform:translateX(0%);width:80%} 80%{width:100%;transform:translateX(0px)} 90%{width:80%;transform:translateX(15px)} 100%{transform:translateX(0px);width:16px} }
+
+    .content { max-width: 860px; margin: 0 auto; display: none; }
+
+    .info-card {
+      border: 1.5px solid #e0e0e0; border-radius: 16px; padding: 28px;
+      box-shadow: 2px 4px 16px rgba(0,0,0,0.07); margin-bottom: 24px;
+    }
+    .card-title { font-size: 1rem; font-weight: 800; color: #212121; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid #f0f0f0; padding-bottom: 12px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width:600px){ .info-grid { grid-template-columns: 1fr; } }
+    .info-item label { font-size: 0.75rem; color: #999; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-item p { font-size: 0.97rem; color: #212121; margin-top: 3px; font-weight: 500; }
+
+    .status-badge {
+      display: inline-block; padding: 5px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;
+    }
+    .status-badge.investigation { background: #cfe2ff; color: #084298; }
+    .status-badge.evidence { background: #fff3cd; color: #664d03; }
+    .status-badge.processing { background: #e2d9f3; color: #432874; }
+    .status-badge.closed { background: #d1e7dd; color: #0f5132; }
+
+    .evidence-list { display: flex; flex-wrap: wrap; gap: 12px; }
+    .evidence-item {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 0.85rem;
+      background: #fafafa; text-decoration: none; color: #212121; transition: background 0.2s;
+    }
+    .evidence-item:hover { background: #f0f0f0; }
+
+    .input {
+      width: 100%; padding: 0.875rem; font-size: 1rem;
+      border: 1.5px solid #000; border-radius: 0.5rem;
+      box-shadow: 2.5px 3px 0 #000; outline: none;
+      transition: ease 0.25s; font-family: inherit;
+    }
+    .input:focus { box-shadow: 5.5px 7px 0 black; }
+
+    .upload-area { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; margin-top: 14px; }
+    .upload-area input[type="file"] { flex: 1; min-width: 200px; }
+
+    button {
+      padding: 15px 25px; border: unset; border-radius: 15px; color: #212121;
+      z-index: 1; background: #e8e8e8; position: relative; font-weight: 1000;
+      font-size: 17px; box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+      transition: all 250ms; overflow: hidden; cursor: pointer;
+    }
+    button::before { content:""; position:absolute; top:0; left:0; height:100%; width:0; border-radius:15px; background-color:#212121; z-index:-1; box-shadow:4px 8px 19px -3px rgba(0,0,0,0.27); transition:all 250ms; }
+    button:hover { color: #e8e8e8; }
+    button:hover::before { width: 100%; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Popup */
+    .popup-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .popup-overlay.show { display:flex; }
+    .popup { background:#fff; border-radius:16px; padding:32px 28px; max-width:380px; width:90%; text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .popup .popup-icon { font-size:2.5rem; margin-bottom:12px; }
+    .popup h3 { font-size:1.15rem; font-weight:700; margin-bottom:8px; color:#212121; }
+    .popup p { color:#555; font-size:0.93rem; margin-bottom:20px; }
+
+    .empty-evidence { color: #bbb; font-style: italic; font-size: 0.9rem; }
+    .summary-text { font-size: 0.97rem; color: #333; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🔍 Case Details</h1>
+    <p>View full case information and updates</p>
+  </div>
+  <a href="my-complaints.html" class="back-btn">← Back</a>
+</div>
+
+<div id="loaderWrap" class="loader-wrap">
+  <div class="loader">
+    <span class="loader-text">loading</span>
+    <span class="load"></span>
+  </div>
+</div>
+
+<div class="content" id="content">
+
+  <!-- Case Overview -->
+  <div class="info-card">
+    <div class="card-title">⚖️ Case Overview</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Case ID</label><p id="caseId">-</p></div>
+      <div class="info-item"><label>Status</label><p id="caseStatus">-</p></div>
+      <div class="info-item"><label>Assigned Officer</label><p id="assignedOfficer">-</p></div>
+      <div class="info-item"><label>Opened On</label><p id="createdAt">-</p></div>
+      <div class="info-item"><label>Closed On</label><p id="closedAt">-</p></div>
+    </div>
+  </div>
+
+  <!-- Case Summary -->
+  <div class="info-card" id="summaryCard" style="display:none;">
+    <div class="card-title">📝 Case Summary</div>
+    <p class="summary-text" id="caseSummary"></p>
+  </div>
+
+  <!-- Final Result -->
+  <div class="info-card" id="resultCard" style="display:none;">
+    <div class="card-title">🏁 Final Result</div>
+    <p class="summary-text" id="finalResult"></p>
+  </div>
+
+  <!-- Complaint Info -->
+  <div class="info-card">
+    <div class="card-title">📋 Original Complaint</div>
+    <div class="info-grid">
+      <div class="info-item"><label>Description</label><p id="compDescription">-</p></div>
+      <div class="info-item"><label>Location</label><p id="compLocation">-</p></div>
+      <div class="info-item"><label>Incident Date</label><p id="compDate">-</p></div>
+      <div class="info-item"><label>Incident Time</label><p id="compTime">-</p></div>
+    </div>
+  </div>
+
+  <!-- Case Evidence -->
+  <div class="info-card">
+    <div class="card-title">🗂️ Case Evidence</div>
+    <div id="caseEvidenceList" class="evidence-list"></div>
+  </div>
+
+  <!-- Upload Evidence (citizen) -->
+  <div class="info-card" id="uploadSection">
+    <div class="card-title">📎 Submit Additional Evidence</div>
+    <p style="font-size:0.9rem;color:#666;margin-bottom:12px;">You can upload additional files to support your case.</p>
+    <div class="upload-area">
+      <input type="file" id="evidenceFile" class="input" style="padding:0.6rem;" />
+      <button onclick="uploadEvidence()" id="uploadBtn">Upload</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Popup -->
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <div class="popup-icon" id="popupIcon"></div>
+    <h3 id="popupTitle"></h3>
+    <p id="popupMsg"></p>
+    <button onclick="closePopup()">OK</button>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:8080';
+  let currentCaseId = null;
+
+  function showPopup(icon, title, msg) {
+    document.getElementById('popupIcon').textContent = icon;
+    document.getElementById('popupTitle').textContent = title;
+    document.getElementById('popupMsg').textContent = msg;
+    document.getElementById('popupOverlay').classList.add('show');
+  }
+  function closePopup() { document.getElementById('popupOverlay').classList.remove('show'); }
+
+  function statusBadge(status) {
+    const map = { 'Under Investigation':'investigation','Evidence Collection':'evidence','Processing':'processing','Closed':'closed' };
+    const cls = map[status] || 'investigation';
+    return `<span class="status-badge ${cls}">${status}</span>`;
+  }
+
+  function fileIcon(url) {
+    if (!url) return '📄';
+    const ext = url.split('.').pop().toLowerCase();
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼️';
+    if (ext === 'pdf') return '📕';
+    if (['mp4','mov','avi'].includes(ext)) return '🎥';
+    return '📄';
+  }
+
+  async function loadCaseDetails() {
+    const complaint_id = localStorage.getItem('view_complaint_id');
+    if (!complaint_id) { window.location.href = 'my-complaints.html'; return; }
+
+    try {
+      // data is a String[] array:
+      // [0]=case_id, [1]=current_status, [2]=case_summary, [3]=final_result
+      // [4]=officer name, [5]=officer phone, [6]=badge_id
+      const res = await fetch(`${BASE}/api/citizen/case-details?complaint_id=${complaint_id}`);
+      const data = await res.json();
+      document.getElementById('loaderWrap').style.display = 'none';
+
+      if (!data || !Array.isArray(data)) {
+        showPopup('❌', 'Error', 'Could not load case details.');
+        return;
+      }
+
+      currentCaseId = data[0];
+      document.getElementById('content').style.display = 'block';
+
+      document.getElementById('caseId').textContent = `#${data[0]}`;
+      document.getElementById('caseStatus').innerHTML = statusBadge(data[1]);
+      document.getElementById('assignedOfficer').textContent = `${data[4]} (Badge: ${data[6]})`;
+      document.getElementById('createdAt').textContent = '—';
+      document.getElementById('closedAt').textContent = '—';
+
+      if (data[2]) {
+        document.getElementById('caseSummary').textContent = data[2];
+        document.getElementById('summaryCard').style.display = 'block';
+      }
+      if (data[3]) {
+        document.getElementById('finalResult').textContent = data[3];
+        document.getElementById('resultCard').style.display = 'block';
+      }
+
+      // Complaint info - fetch from complaints endpoint
+      const compRes = await fetch(`${BASE}/api/citizen/complaints?citizen_id=${localStorage.getItem('citizen_id')}`);
+      const complaints = await compRes.json();
+      const comp = complaints.find(c => String(c.complaintId) === String(complaint_id));
+      if (comp) {
+        document.getElementById('compDescription').textContent = comp.description || '—';
+        document.getElementById('compLocation').textContent = comp.location || '—';
+        document.getElementById('compDate').textContent = comp.incidentDate || '—';
+        document.getElementById('compTime').textContent = comp.incidentTime || '—';
+      }
+
+      // Evidence - not returned by this endpoint, show empty for now
+      document.getElementById('caseEvidenceList').innerHTML = '<span class="empty-evidence">No evidence uploaded yet.</span>';
+
+      if (data[1] === 'Closed') {
+        document.getElementById('uploadSection').style.display = 'none';
+      }
+
+    } catch (e) {
+      document.getElementById('loaderWrap').style.display = 'none';
+      showPopup('❌', 'Error', 'Failed to load case details.');
+    }
+  }
+
+  async function uploadEvidence() {
+    const file = document.getElementById('evidenceFile').files[0];
+    if (!file) { showPopup('⚠️', 'No File', 'Please select a file to upload.'); return; }
+
+    const citizen_id = localStorage.getItem('citizen_id');
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true; btn.textContent = 'Uploading...';
+
+    const params = new URLSearchParams();
+    params.append('case_id', currentCaseId);
+    params.append('uploaded_by', 'citizen');
+    params.append('uploaded_by_id', citizen_id);
+    params.append('file_url', file.name);
+
+    try {
+      const res = await fetch(`${BASE}/api/io/upload-evidence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: params.toString()
+      });
+      const data = await res.json();
+      btn.disabled = false; btn.textContent = 'Upload';
+      if (data.success) { showPopup('✅', 'Uploaded', 'Evidence submitted successfully.'); }
+      else { showPopup('❌', 'Failed', data.message || 'Upload failed.'); }
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Upload';
+      showPopup('❌', 'Error', 'Could not upload file.');
+    }
+  }
+
+  loadCaseDetails();
+</script>
+</body>
+</html>
