@@ -162,7 +162,7 @@
 
     async function loadName() {
       try {
-        const response = await fetch(`http://localhost:8080/api/citizen/name?citizen_id=${citizenId}`);
+        const response = await fetch(`https://crime-reporting-system-production.up.railway.app/api/citizen/name?citizen_id=${citizenId}`);
         const data = await response.json();
         if (data.name) {
           document.getElementById('citizen-name').textContent = data.name;
