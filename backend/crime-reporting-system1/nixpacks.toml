@@ -1,5 +1,8 @@
+[phases.setup]
+nixPkgs = ["jdk22", "maven"]
+
 [phases.build]
 cmds = ["mvn clean package -DskipTests"]
 
 [start]
-cmd = "java -jar target/*.jar"
+cmd = "java -jar target/crime-reporting-system-1.0-SNAPSHOT.jar"
