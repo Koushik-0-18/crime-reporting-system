@@ -2,6 +2,9 @@ package com.crimereport.servlet;
 
 import com.crimereport.dao.ChiefDAO;
 import com.crimereport.model.Complaint;
+import com.crimereport.security.AuthTokenService;
+import com.crimereport.security.CorsUtil;
+import com.crimereport.security.ServletUtil;
 import com.google.gson.Gson;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -22,9 +25,18 @@ public class ChiefServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        CorsUtil.apply(req, res);
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
+        if (path == null || path.isBlank()) {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
+            return;
+        }
+        AuthTokenService.SessionData session = AuthTokenService.validate(ServletUtil.bearerToken(req));
+        if (session == null || !"police".equals(session.type()) || !"Chief".equals(session.role())) {
+            ServletUtil.writeError(res, gson, 401, "Unauthorized");
+            return;
+        }
 
         if (path.equals("/pending-complaints")) {
             List<Complaint> complaints = chiefDAO.getPendingComplaints();
@@ -47,41 +59,72 @@ public class ChiefServlet extends HttpServlet {
             out.print(gson.toJson(officers));
 
         } else if (path.equals("/case-details")) {
-            int caseId = Integer.parseInt(req.getParameter("case_id"));
+            Integer caseId = ServletUtil.parseIntParam(req, "case_id");
+            if (caseId == null) {
+                ServletUtil.writeError(res, gson, 400, "Invalid case_id");
+                return;
+            }
             String[] details = chiefDAO.getCaseDetailsForChief(caseId);
             out.print(gson.toJson(details));
+        } else {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
         }
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        CorsUtil.apply(req, res);
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
+        if (path == null || path.isBlank()) {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
+            return;
+        }
+        AuthTokenService.SessionData session = AuthTokenService.validate(ServletUtil.bearerToken(req));
+        if (session == null || !"police".equals(session.type()) || !"Chief".equals(session.role())) {
+            ServletUtil.writeError(res, gson, 401, "Unauthorized");
+            return;
+        }
 
         if (path.equals("/reject-complaint")) {
-            int complaintId = Integer.parseInt(req.getParameter("complaint_id"));
+            Integer complaintId = ServletUtil.parseIntParam(req, "complaint_id");
+            if (complaintId == null) {
+                ServletUtil.writeError(res, gson, 400, "Invalid complaint_id");
+                return;
+            }
             boolean success = chiefDAO.rejectComplaint(complaintId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", success);
+            if (!success) {
+                res.setStatus(400);
+                response.put("message", "Failed to reject complaint");
+            }
             out.print(gson.toJson(response));
 
         } else if (path.equals("/convert-to-case")) {
-            int complaintId = Integer.parseInt(req.getParameter("complaint_id"));
-            int officerId = Integer.parseInt(req.getParameter("officer_id"));
+            Integer complaintId = ServletUtil.parseIntParam(req, "complaint_id");
+            Integer officerId = ServletUtil.parseIntParam(req, "officer_id");
+            if (complaintId == null || officerId == null) {
+                ServletUtil.writeError(res, gson, 400, "Invalid complaint_id or officer_id");
+                return;
+            }
             boolean success = chiefDAO.convertToCase(complaintId, officerId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", success);
+            if (!success) {
+                res.setStatus(400);
+                response.put("message", "Failed to convert complaint to case");
+            }
             out.print(gson.toJson(response));
+        } else {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
         }
     }
 
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        CorsUtil.apply(req, res);
         res.setStatus(200);
     }
 }

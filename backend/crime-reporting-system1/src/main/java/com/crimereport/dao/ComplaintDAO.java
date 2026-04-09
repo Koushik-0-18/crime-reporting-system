@@ -19,8 +19,7 @@ public class ComplaintDAO {
             stmt.setDate(3, java.sql.Date.valueOf(incidentDate));
             stmt.setTime(4, java.sql.Time.valueOf(incidentTime));
             stmt.setString(5, location);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to file complaint: " + e.getMessage());
             return false;
@@ -33,17 +32,18 @@ public class ComplaintDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, citizenId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                complaints.add(new Complaint(
-                        rs.getInt("complaint_id"),
-                        rs.getInt("citizen_id"),
-                        rs.getString("description"),
-                        rs.getString("incident_date"),
-                        rs.getString("incident_time"),
-                        rs.getString("location"),
-                        rs.getString("status")
-                ));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    complaints.add(new Complaint(
+                            rs.getInt("complaint_id"),
+                            rs.getInt("citizen_id"),
+                            rs.getString("description"),
+                            rs.getString("incident_date"),
+                            rs.getString("incident_time"),
+                            rs.getString("location"),
+                            rs.getString("status")
+                    ));
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch complaints: " + e.getMessage());
@@ -56,8 +56,7 @@ public class ComplaintDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, complaintId);
             stmt.setString(2, fileUrl);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to upload evidence: " + e.getMessage());
             return false;
@@ -72,21 +71,37 @@ public class ComplaintDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, complaintId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("final_result"),
-                        rs.getString("name"),
-                        rs.getString("phone"),
-                        rs.getString("badge_id")
-                };
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("final_result"),
+                            rs.getString("name"),
+                            rs.getString("phone"),
+                            rs.getString("badge_id")
+                    };
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch case details: " + e.getMessage());
         }
         return null;
+    }
+
+    public boolean complaintBelongsToCitizen(int complaintId, int citizenId) {
+        String sql = "SELECT 1 FROM complaints WHERE complaint_id = ? AND citizen_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, complaintId);
+            stmt.setInt(2, citizenId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to validate complaint ownership: " + e.getMessage());
+            return false;
+        }
     }
 }

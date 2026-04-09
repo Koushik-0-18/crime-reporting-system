@@ -15,17 +15,18 @@ public class ChiefDAO {
         String sql = "SELECT * FROM complaints WHERE status = 'Pending'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                complaints.add(new Complaint(
-                        rs.getInt("complaint_id"),
-                        rs.getInt("citizen_id"),
-                        rs.getString("description"),
-                        rs.getString("incident_date"),
-                        rs.getString("incident_time"),
-                        rs.getString("location"),
-                        rs.getString("status")
-                ));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    complaints.add(new Complaint(
+                            rs.getInt("complaint_id"),
+                            rs.getInt("citizen_id"),
+                            rs.getString("description"),
+                            rs.getString("incident_date"),
+                            rs.getString("incident_time"),
+                            rs.getString("location"),
+                            rs.getString("status")
+                    ));
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch pending complaints: " + e.getMessage());
@@ -38,8 +39,7 @@ public class ChiefDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, complaintId);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to reject complaint: " + e.getMessage());
             return false;
@@ -52,18 +52,23 @@ public class ChiefDAO {
             conn = DBConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // Update complaint status to Converted
             String updateComplaint = "UPDATE complaints SET status = 'Converted' WHERE complaint_id = ?";
-            PreparedStatement stmt1 = conn.prepareStatement(updateComplaint);
-            stmt1.setInt(1, complaintId);
-            stmt1.executeUpdate();
-
-            // Create a new case
             String insertCase = "INSERT INTO cases (complaint_id, assigned_officer_id) VALUES (?, ?)";
-            PreparedStatement stmt2 = conn.prepareStatement(insertCase);
-            stmt2.setInt(1, complaintId);
-            stmt2.setInt(2, officerId);
-            stmt2.executeUpdate();
+            try (PreparedStatement stmt1 = conn.prepareStatement(updateComplaint);
+                 PreparedStatement stmt2 = conn.prepareStatement(insertCase)) {
+                stmt1.setInt(1, complaintId);
+                if (stmt1.executeUpdate() == 0) {
+                    conn.rollback();
+                    return false;
+                }
+
+                stmt2.setInt(1, complaintId);
+                stmt2.setInt(2, officerId);
+                if (stmt2.executeUpdate() == 0) {
+                    conn.rollback();
+                    return false;
+                }
+            }
 
             conn.commit();
             return true;
@@ -71,6 +76,14 @@ public class ChiefDAO {
             System.out.println("Failed to convert complaint to case: " + e.getMessage());
             try { if (conn != null) conn.rollback(); } catch (Exception ex) { ex.printStackTrace(); }
             return false;
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                }
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -79,13 +92,14 @@ public class ChiefDAO {
         String sql = "SELECT police_id, name, badge_id FROM police WHERE role = 'IO'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                officers.add(new String[]{
-                        String.valueOf(rs.getInt("police_id")),
-                        rs.getString("name"),
-                        rs.getString("badge_id")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    officers.add(new String[]{
+                            String.valueOf(rs.getInt("police_id")),
+                            rs.getString("name"),
+                            rs.getString("badge_id")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch officers: " + e.getMessage());
@@ -97,17 +111,18 @@ public class ChiefDAO {
         String sql = "SELECT * FROM complaints WHERE status = 'Rejected'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                complaints.add(new Complaint(
-                        rs.getInt("complaint_id"),
-                        rs.getInt("citizen_id"),
-                        rs.getString("description"),
-                        rs.getString("incident_date"),
-                        rs.getString("incident_time"),
-                        rs.getString("location"),
-                        rs.getString("status")
-                ));
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    complaints.add(new Complaint(
+                            rs.getInt("complaint_id"),
+                            rs.getInt("citizen_id"),
+                            rs.getString("description"),
+                            rs.getString("incident_date"),
+                            rs.getString("incident_time"),
+                            rs.getString("location"),
+                            rs.getString("status")
+                    ));
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch rejected complaints: " + e.getMessage());
@@ -127,20 +142,21 @@ public class ChiefDAO {
                 "WHERE c.current_status != 'Closed'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                cases.add(new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("description"),
-                        rs.getString("location"),
-                        rs.getString("incident_date"),
-                        rs.getString("name"),
-                        rs.getString("badge_id"),
-                        rs.getString("full_name"),
-                        rs.getString("mobile_number")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    cases.add(new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("description"),
+                            rs.getString("location"),
+                            rs.getString("incident_date"),
+                            rs.getString("name"),
+                            rs.getString("badge_id"),
+                            rs.getString("full_name"),
+                            rs.getString("mobile_number")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch active cases: " + e.getMessage());
@@ -160,22 +176,23 @@ public class ChiefDAO {
                 "WHERE c.current_status = 'Closed'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                cases.add(new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("final_result"),
-                        rs.getString("closed_at"),
-                        rs.getString("description"),
-                        rs.getString("location"),
-                        rs.getString("incident_date"),
-                        rs.getString("name"),
-                        rs.getString("badge_id"),
-                        rs.getString("full_name"),
-                        rs.getString("mobile_number")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    cases.add(new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("final_result"),
+                            rs.getString("closed_at"),
+                            rs.getString("description"),
+                            rs.getString("location"),
+                            rs.getString("incident_date"),
+                            rs.getString("name"),
+                            rs.getString("badge_id"),
+                            rs.getString("full_name"),
+                            rs.getString("mobile_number")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch closed cases: " + e.getMessage());
@@ -197,26 +214,27 @@ public class ChiefDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, caseId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("final_result"),
-                        rs.getString("created_at"),
-                        rs.getString("closed_at"),
-                        rs.getString("description"),
-                        rs.getString("location"),
-                        rs.getString("incident_date"),
-                        rs.getString("incident_time"),
-                        rs.getString("name"),
-                        rs.getString("badge_id"),
-                        rs.getString("phone"),
-                        rs.getString("full_name"),
-                        rs.getString("mobile_number"),
-                        rs.getString("email")
-                };
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("final_result"),
+                            rs.getString("created_at"),
+                            rs.getString("closed_at"),
+                            rs.getString("description"),
+                            rs.getString("location"),
+                            rs.getString("incident_date"),
+                            rs.getString("incident_time"),
+                            rs.getString("name"),
+                            rs.getString("badge_id"),
+                            rs.getString("phone"),
+                            rs.getString("full_name"),
+                            rs.getString("mobile_number"),
+                            rs.getString("email")
+                    };
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch case details: " + e.getMessage());

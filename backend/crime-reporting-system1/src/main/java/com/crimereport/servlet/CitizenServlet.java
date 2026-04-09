@@ -3,6 +3,9 @@ package com.crimereport.servlet;
 import com.crimereport.dao.CitizenDAO;
 import com.crimereport.dao.ComplaintDAO;
 import com.crimereport.model.Complaint;
+import com.crimereport.security.AuthTokenService;
+import com.crimereport.security.CorsUtil;
+import com.crimereport.security.ServletUtil;
 import com.google.gson.Gson;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -24,9 +27,13 @@ public class CitizenServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        CorsUtil.apply(req, res);
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
+        if (path == null || path.isBlank()) {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
+            return;
+        }
 
         if (path.equals("/register")) {
             String fullName = req.getParameter("full_name");
@@ -34,6 +41,11 @@ public class CitizenServlet extends HttpServlet {
             String email = req.getParameter("email");
             String address = req.getParameter("address");
             String password = req.getParameter("password");
+            if (fullName == null || mobile == null || email == null || address == null || password == null
+                    || fullName.isBlank() || mobile.isBlank() || email.isBlank() || address.isBlank() || password.isBlank()) {
+                ServletUtil.writeError(res, gson, 400, "Missing required fields");
+                return;
+            }
 
             boolean success = citizenDAO.registerCitizen(fullName, mobile, email, address, password);
             Map<String, Object> response = new HashMap<>();
@@ -44,12 +56,17 @@ public class CitizenServlet extends HttpServlet {
         } else if (path.equals("/login")) {
             String mobile = req.getParameter("mobile_number");
             String password = req.getParameter("password");
+            if (mobile == null || password == null || mobile.isBlank() || password.isBlank()) {
+                ServletUtil.writeError(res, gson, 400, "Missing credentials");
+                return;
+            }
 
             int citizenId = citizenDAO.loginCitizen(mobile, password);
             Map<String, Object> response = new HashMap<>();
             if (citizenId != -1) {
                 response.put("success", true);
                 response.put("citizen_id", citizenId);
+                response.put("token", AuthTokenService.createCitizenToken(citizenId));
             } else {
                 response.put("success", false);
                 response.put("message", "Invalid credentials");
@@ -57,42 +74,83 @@ public class CitizenServlet extends HttpServlet {
             out.print(gson.toJson(response));
 
         } else if (path.equals("/file-complaint")) {
-            int citizenId = Integer.parseInt(req.getParameter("citizen_id"));
+            AuthTokenService.SessionData session = AuthTokenService.validate(ServletUtil.bearerToken(req));
+            if (session == null || !"citizen".equals(session.type())) {
+                ServletUtil.writeError(res, gson, 401, "Unauthorized");
+                return;
+            }
+            Integer citizenId = ServletUtil.parseIntParam(req, "citizen_id");
+            if (citizenId == null || citizenId != session.userId()) {
+                ServletUtil.writeError(res, gson, 403, "Forbidden");
+                return;
+            }
             String description = req.getParameter("description");
             String date = req.getParameter("incident_date");
             String time = req.getParameter("incident_time");
             String location = req.getParameter("location");
+            if (description == null || date == null || time == null || location == null
+                    || description.isBlank() || date.isBlank() || time.isBlank() || location.isBlank()) {
+                ServletUtil.writeError(res, gson, 400, "Missing complaint fields");
+                return;
+            }
 
             boolean success = complaintDAO.fileComplaint(citizenId, description, date, time, location);
             Map<String, Object> response = new HashMap<>();
             response.put("success", success);
+            if (!success) {
+                res.setStatus(400);
+                response.put("message", "Failed to file complaint");
+            }
             out.print(gson.toJson(response));
+        } else {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
         }
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException {
         res.setContentType("application/json");
-        res.setHeader("Access-Control-Allow-Origin", "*");
+        CorsUtil.apply(req, res);
         PrintWriter out = res.getWriter();
         String path = req.getPathInfo();
+        if (path == null || path.isBlank()) {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
+            return;
+        }
+        AuthTokenService.SessionData session = AuthTokenService.validate(ServletUtil.bearerToken(req));
+        if (session == null || !"citizen".equals(session.type())) {
+            ServletUtil.writeError(res, gson, 401, "Unauthorized");
+            return;
+        }
 
         if (path.equals("/complaints")) {
-            int citizenId = Integer.parseInt(req.getParameter("citizen_id"));
+            Integer citizenId = ServletUtil.parseIntParam(req, "citizen_id");
+            if (citizenId == null || citizenId != session.userId()) {
+                ServletUtil.writeError(res, gson, 403, "Forbidden");
+                return;
+            }
             List<Complaint> complaints = complaintDAO.getComplaintsByCitizen(citizenId);
             out.print(gson.toJson(complaints));
 
         } else if (path.equals("/case-details")) {
-            int complaintId = Integer.parseInt(req.getParameter("complaint_id"));
+            Integer complaintId = ServletUtil.parseIntParam(req, "complaint_id");
+            if (complaintId == null) {
+                ServletUtil.writeError(res, gson, 400, "Invalid complaint_id");
+                return;
+            }
+            if (!complaintDAO.complaintBelongsToCitizen(complaintId, session.userId())) {
+                ServletUtil.writeError(res, gson, 403, "Forbidden");
+                return;
+            }
             String[] details = complaintDAO.getCaseDetailsForCitizen(complaintId);
             out.print(gson.toJson(details));
+        } else {
+            ServletUtil.writeError(res, gson, 404, "Endpoint not found");
         }
     }
     @Override
     protected void doOptions(HttpServletRequest req, HttpServletResponse res) {
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-        res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+        CorsUtil.apply(req, res);
         res.setStatus(200);
     }
 }
