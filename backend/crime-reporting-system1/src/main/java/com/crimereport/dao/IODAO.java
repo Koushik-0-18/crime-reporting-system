@@ -17,15 +17,16 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, officerId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                cases.add(new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("description"),
-                        rs.getString("location")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    cases.add(new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("description"),
+                            rs.getString("location")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch cases: " + e.getMessage());
@@ -39,8 +40,7 @@ public class IODAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, newStatus);
             stmt.setInt(2, caseId);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to update status: " + e.getMessage());
             return false;
@@ -54,8 +54,7 @@ public class IODAO {
             stmt.setInt(1, caseId);
             stmt.setInt(2, officerId);
             stmt.setString(3, note);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to add diary entry: " + e.getMessage());
             return false;
@@ -69,8 +68,7 @@ public class IODAO {
             stmt.setInt(1, caseId);
             stmt.setInt(2, officerId);
             stmt.setString(3, fileUrl);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to upload evidence: " + e.getMessage());
             return false;
@@ -84,8 +82,7 @@ public class IODAO {
             stmt.setString(1, summary);
             stmt.setString(2, finalResult);
             stmt.setInt(3, caseId);
-            stmt.executeUpdate();
-            return true;
+            return stmt.executeUpdate() > 0;
         } catch (Exception e) {
             System.out.println("Failed to close case: " + e.getMessage());
             return false;
@@ -98,12 +95,13 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, caseId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                entries.add(new String[]{
-                        rs.getString("note"),
-                        rs.getString("created_at")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    entries.add(new String[]{
+                            rs.getString("note"),
+                            rs.getString("created_at")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch diary: " + e.getMessage());
@@ -119,15 +117,16 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, caseId);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new String[]{
-                        String.valueOf(rs.getInt("citizen_id")),
-                        rs.getString("full_name"),
-                        rs.getString("mobile_number"),
-                        rs.getString("email"),
-                        rs.getString("address")
-                };
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new String[]{
+                            String.valueOf(rs.getInt("citizen_id")),
+                            rs.getString("full_name"),
+                            rs.getString("mobile_number"),
+                            rs.getString("email"),
+                            rs.getString("address")
+                    };
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch citizen info: " + e.getMessage());
@@ -144,13 +143,14 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, caseId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                evidence.add(new String[]{
-                        String.valueOf(rs.getInt("evidence_id")),
-                        rs.getString("file_url"),
-                        rs.getString("uploaded_at")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    evidence.add(new String[]{
+                            String.valueOf(rs.getInt("evidence_id")),
+                            rs.getString("file_url"),
+                            rs.getString("uploaded_at")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch complaint evidence: " + e.getMessage());
@@ -165,14 +165,15 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, caseId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                evidence.add(new String[]{
-                        String.valueOf(rs.getInt("evidence_id")),
-                        rs.getString("uploaded_by"),
-                        rs.getString("file_url"),
-                        rs.getString("uploaded_at")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    evidence.add(new String[]{
+                            String.valueOf(rs.getInt("evidence_id")),
+                            rs.getString("uploaded_by"),
+                            rs.getString("file_url"),
+                            rs.getString("uploaded_at")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch case evidence: " + e.getMessage());
@@ -192,24 +193,40 @@ public class IODAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, officerId);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                cases.add(new String[]{
-                        String.valueOf(rs.getInt("case_id")),
-                        rs.getString("current_status"),
-                        rs.getString("case_summary"),
-                        rs.getString("final_result"),
-                        rs.getString("closed_at"),
-                        rs.getString("description"),
-                        rs.getString("location"),
-                        rs.getString("incident_date"),
-                        rs.getString("full_name"),
-                        rs.getString("mobile_number")
-                });
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    cases.add(new String[]{
+                            String.valueOf(rs.getInt("case_id")),
+                            rs.getString("current_status"),
+                            rs.getString("case_summary"),
+                            rs.getString("final_result"),
+                            rs.getString("closed_at"),
+                            rs.getString("description"),
+                            rs.getString("location"),
+                            rs.getString("incident_date"),
+                            rs.getString("full_name"),
+                            rs.getString("mobile_number")
+                    });
+                }
             }
         } catch (Exception e) {
             System.out.println("Failed to fetch closed cases: " + e.getMessage());
         }
         return cases;
+    }
+
+    public boolean isCaseAssignedToOfficer(int caseId, int officerId) {
+        String sql = "SELECT 1 FROM cases WHERE case_id = ? AND assigned_officer_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, caseId);
+            stmt.setInt(2, officerId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to validate case assignment: " + e.getMessage());
+            return false;
+        }
     }
 }
