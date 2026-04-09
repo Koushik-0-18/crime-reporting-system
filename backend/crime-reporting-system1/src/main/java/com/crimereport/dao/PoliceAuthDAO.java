@@ -2,6 +2,8 @@ package com.crimereport.dao;
 
 import com.crimereport.db.DBConnection;
 import org.mindrot.jbcrypt.BCrypt;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,6 +41,9 @@ public class PoliceAuthDAO {
         if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
             return BCrypt.checkpw(inputPassword, storedPassword);
         }
-        return inputPassword.equals(storedPassword);
+        return MessageDigest.isEqual(
+                inputPassword.getBytes(StandardCharsets.UTF_8),
+                storedPassword.getBytes(StandardCharsets.UTF_8)
+        );
     }
 }
