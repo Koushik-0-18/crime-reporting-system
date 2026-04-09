@@ -21,8 +21,12 @@ public class PoliceAuthDAO {
                     if (!passwordMatches(password, storedPassword)) {
                         return null;
                     }
+                    int policeId = rs.getInt("police_id");
+                    if (!isBcryptHash(storedPassword)) {
+                        migrateToHashedPassword(conn, policeId, password);
+                    }
                     return new String[]{
-                            String.valueOf(rs.getInt("police_id")),
+                            String.valueOf(policeId),
                             rs.getString("name"),
                             rs.getString("role")
                     };
@@ -38,12 +42,27 @@ public class PoliceAuthDAO {
         if (storedPassword == null || storedPassword.isBlank()) {
             return false;
         }
-        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+        if (isBcryptHash(storedPassword)) {
             return BCrypt.checkpw(inputPassword, storedPassword);
         }
         return MessageDigest.isEqual(
                 inputPassword.getBytes(StandardCharsets.UTF_8),
                 storedPassword.getBytes(StandardCharsets.UTF_8)
         );
+    }
+
+    private boolean isBcryptHash(String value) {
+        return value.startsWith("$2a$") || value.startsWith("$2b$") || value.startsWith("$2y$");
+    }
+
+    private void migrateToHashedPassword(Connection conn, int policeId, String password) {
+        String sql = "UPDATE police SET password = ? WHERE police_id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, BCrypt.hashpw(password, BCrypt.gensalt()));
+            stmt.setInt(2, policeId);
+            stmt.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Password hash migration failed: " + e.getMessage());
+        }
     }
 }
