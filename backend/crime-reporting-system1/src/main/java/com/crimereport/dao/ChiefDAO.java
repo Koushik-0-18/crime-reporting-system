@@ -82,7 +82,8 @@ public class ChiefDAO {
                     conn.setAutoCommit(true);
                     conn.close();
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                System.out.println("Failed to close connection after convertToCase: " + e.getMessage());
             }
         }
     }
